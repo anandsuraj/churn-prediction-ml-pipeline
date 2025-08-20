@@ -14,6 +14,7 @@ Configuration:
 
 from data_validation import DataValidator
 from data_ingestion import DataIngestionPipeline
+from raw_data_storage import RawDataStorage
 import sys
 import os
 import schedule
@@ -111,6 +112,12 @@ def run_data_ingestion():
     return pipeline.run_ingestion()
 
 
+def run_raw_data_storage():
+    """Run raw data storage pipeline"""
+    storage = RawDataStorage()
+    return storage.create_data_catalog()
+
+
 def run_data_validation():
     """Run data validation pipeline"""
     validator = DataValidator()
@@ -131,6 +138,12 @@ SCHEDULED_JOBS = [
         'function': run_data_ingestion,
         'type': 'hourly',  # Options: 'hourly', 'daily', 'weekly', 'minutes'
         'time': None       # For daily: "09:00", for minutes: 30, for hourly/weekly: None
+    },
+    {
+        'name': 'Raw Data Storage',
+        'function': run_raw_data_storage,
+        'type': 'hourly',
+        'time': None
     },
     {
         'name': 'Data Validation',

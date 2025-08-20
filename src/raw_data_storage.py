@@ -2,8 +2,19 @@ import os
 import shutil
 from datetime import datetime
 import logging
-import boto3
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
+try:
+    import boto3
+    from botocore.exceptions import ClientError, NoCredentialsError
+    BOTO3_AVAILABLE = True
+except ImportError:
+    BOTO3_AVAILABLE = False
+    logging.warning("boto3 not available. Cloud storage will be simulated.")
 
 logging.basicConfig(level=logging.INFO)
 
@@ -11,7 +22,39 @@ class RawDataStorage:
     def __init__(self, storage_type="local", base_path="data/raw"):
         self.storage_type = storage_type
         self.base_path = base_path
+        self.s3_client = None
+        
+        if storage_type == "cloud" and BOTO3_AVAILABLE:
+            self._init_s3_client()
+        
         self.setup_storage_structure()
+
+    def _init_s3_client(self):
+        """Initialize S3 client"""
+        try:
+            # Get AWS credentials from environment variables
+            aws_access_key = os.environ.get('AWS_ACCESS_KEY_ID')
+            aws_secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
+            aws_region = os.environ.get('AWS_REGION', 'us-east-1')
+            bucket_name = os.environ.get('S3_BUCKET_NAME', 'churn-data-lake')
+            
+            if not aws_access_key or not aws_secret_key:
+                raise ValueError("AWS credentials not found in environment variables")
+            
+            self.s3_client = boto3.client(
+                's3',
+                region_name=aws_region,
+                aws_access_key_id=aws_access_key,
+                aws_secret_access_key=aws_secret_key
+            )
+            
+            # Test connection
+            self.s3_client.head_bucket(Bucket=bucket_name)
+            logging.info(f"S3 connected to bucket: {bucket_name}")
+            
+        except Exception as e:
+            logging.error(f"S3 initialization failed: {str(e)}")
+            self.s3_client = None
 
     def setup_storage_structure(self):
         """Create organized folder structure for raw data"""
@@ -50,20 +93,35 @@ class RawDataStorage:
 
         return destination_path
 
-    def upload_to_cloud(self, local_path, bucket_name="churn-data-lake"):
-        """Upload to cloud storage (AWS S3 simulation)"""
-        if self.storage_type == "cloud":
-            try:
-                # Simulate cloud upload
-                logging.info(f"Uploading {local_path} to {bucket_name}")
-                # s3_client = boto3.client('s3')
-                # s3_client.upload_file(local_path, bucket_name, key)
-                logging.info("Cloud upload simulated successfully")
-                return f"s3://{bucket_name}/{local_path}"
-            except Exception as e:
-                logging.error(f"Cloud upload failed: {str(e)}")
-                raise
-        return local_path
+    def upload_to_cloud(self, local_path, s3_key=None):
+        """Upload file to S3"""
+        if self.storage_type != "cloud":
+            logging.info("Cloud storage not enabled")
+            return local_path
+        
+        if not self.s3_client:
+            logging.warning("S3 client not available")
+            return local_path
+        
+        try:
+            # Get bucket name from environment
+            bucket_name = os.environ.get('S3_BUCKET_NAME', 'churn-data-lake')
+            
+            # Generate S3 key if not provided
+            if not s3_key:
+                timestamp = datetime.now().strftime("%Y/%m/%d")
+                filename = Path(local_path).name
+                s3_key = f"raw_data/{timestamp}/{filename}"
+            
+            # Upload to S3
+            self.s3_client.upload_file(local_path, bucket_name, s3_key)
+            s3_url = f"s3://{bucket_name}/{s3_key}"
+            logging.info(f"Uploaded to S3: {s3_url}")
+            return s3_url
+            
+        except Exception as e:
+            logging.error(f"S3 upload failed: {str(e)}")
+            return local_path
 
     def create_data_catalog(self):
         """Create metadata catalog for stored data"""

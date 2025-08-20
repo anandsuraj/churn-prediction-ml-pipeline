@@ -1,23 +1,37 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
 # Python
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-.Python
+*$py.class
 *.so
-.venv/
-venv/
-env/
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
 
 # Logs
 logs/
 *.log
 
-# Data files
-data/raw/*.csv
-data/raw/*.json
-data/processed/
-data/transformed/
+# Data
+data/
+reports/
 
 # IDE
 .vscode/
@@ -28,15 +42,3 @@ data/transformed/
 # OS
 .DS_Store
 Thumbs.db
-
-# Jupyter
-.ipynb_checkpoints/
-
-# Models
-models/
-*.pkl
-*.joblib
-
-# Temporary files
-*.tmp
-*.temp
