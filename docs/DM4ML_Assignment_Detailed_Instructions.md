@@ -174,3 +174,22 @@ orchestration tool - Logs or monitoring dashboard screenshots
 -   Note: As it's a group assignment, only one submission is expected
     from each group. Do not upload the solution individually. If it's
     observed, then a penalty (25% reduction) will be applicable.
+
+
+If you see in this instructions
+
+
+
+/Applications/MAMP/htdocs/churn-prediction-pipeline/docs/DM4ML_Assignment_Detailed_Instructions.md
+
+
+
+I skipped the step 3 that is 3. Raw Data Storage,
+
+
+
+there is a file already there nameed raw_data_storage.py
+
+
+
+test and review it based on the instruction and sequenece everywhere

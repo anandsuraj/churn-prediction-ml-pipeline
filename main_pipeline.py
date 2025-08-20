@@ -9,13 +9,15 @@ Usage:
     python main_pipeline.py
 """
 
-from data_ingestion import DataIngestionPipeline
 import sys
 import os
 from datetime import datetime
 
 # Add src directory to path
 sys.path.append('src')
+
+from data_ingestion import DataIngestionPipeline
+from data_validation import DataValidator
 
 
 def main():
@@ -26,13 +28,20 @@ def main():
 
     try:
         # Run data ingestion
+        print("Step 1: Running data ingestion...")
         pipeline = DataIngestionPipeline()
-        result = pipeline.run_ingestion()
+        ingestion_result = pipeline.run_ingestion()
+
+        # Run data validation
+        print("Step 2: Running data validation...")
+        validator = DataValidator()
+        validation_result = validator.run_validation()
 
         print(f"\nPipeline completed successfully!")
-        print(f"CSV File: {result['csv_file']}")
-        print(f"Hugging Face File: {result['huggingface_file']}")
-        print(f"Check logs: logs/data_ingestion.log")
+        print(f"CSV File: {ingestion_result['csv_file']}")
+        print(f"Hugging Face File: {ingestion_result['huggingface_file']}")
+        print(f"Validation Report: {validation_result['report_path']}")
+        print(f"Check logs: logs/data_ingestion.log, logs/data_validation.log")
 
     except Exception as e:
         print(f"Pipeline failed: {str(e)}")

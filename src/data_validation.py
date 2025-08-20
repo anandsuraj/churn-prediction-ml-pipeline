@@ -1,200 +1,231 @@
 import pandas as pd
-import numpy as np
+import os
 import logging
 from datetime import datetime
-import json
+import glob
 
-logging.basicConfig(level=logging.INFO)
+# Configure logging
+os.makedirs('logs', exist_ok=True)
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('logs/data_validation.log'),
+        logging.StreamHandler()
+    ]
+)
 
-class DataQualityValidator:
-    def __init__(self):
-        self.validation_results = {}
+class DataValidator:
+    def __init__(self, raw_data_path="data/raw"):
+        self.raw_data_path = raw_data_path
+        os.makedirs('reports', exist_ok=True)
 
-    def validate_data_types(self, df, expected_types):
-        """Validate column data types"""
-        type_issues = []
-
-        for column, expected_type in expected_types.items():
-            if column in df.columns:
-                actual_type = str(df[column].dtype)
-                if expected_type not in actual_type:
-                    type_issues.append({
-                        'column': column,
-                        'expected': expected_type,
-                        'actual': actual_type
-                    })
-
-        self.validation_results['data_types'] = {
-            'passed': len(type_issues) == 0,
-            'issues': type_issues
-        }
-
-        return len(type_issues) == 0
-
-    def validate_missing_values(self, df, critical_columns):
-        """Check for missing values in critical columns"""
-        missing_data = []
-
-        for column in critical_columns:
-            if column in df.columns:
+    def validate_csv_data(self, csv_file):
+        """Validate CSV data file"""
+        try:
+            logging.info(f"Validating CSV file: {csv_file}")
+            
+            df = pd.read_csv(csv_file)
+            
+            validation_results = {
+                'file_name': os.path.basename(csv_file),
+                'total_records': len(df),
+                'total_columns': len(df.columns),
+                'missing_values': {},
+                'duplicate_records': 0,
+                'data_types': {},
+                'negative_values': {}
+            }
+            
+            # Check missing values
+            for column in df.columns:
                 missing_count = df[column].isnull().sum()
-                missing_percentage = (missing_count / len(df)) * 100
+                if missing_count > 0:
+                    validation_results['missing_values'][column] = int(missing_count)
+            
+            # Check duplicates
+            validation_results['duplicate_records'] = int(df.duplicated().sum())
+            
+            # Check data types
+            for column in df.columns:
+                validation_results['data_types'][column] = str(df[column].dtype)
+            
+            # Check negative values in numeric columns
+            numeric_columns = df.select_dtypes(include=['int64', 'float64']).columns
+            for column in numeric_columns:
+                negative_count = (df[column] < 0).sum()
+                if negative_count > 0:
+                    validation_results['negative_values'][column] = int(negative_count)
+            
+            logging.info(f"CSV validation completed: {len(df)} records, {len(df.columns)} columns")
+            return validation_results
+            
+        except Exception as e:
+            logging.error(f"CSV validation failed: {str(e)}")
+            raise
 
-                if missing_percentage > 0:
-                    missing_data.append({
-                        'column': column,
-                        'missing_count': int(missing_count),
-                        'missing_percentage': round(missing_percentage, 2)
-                    })
+    def validate_json_data(self, json_file):
+        """Validate JSON data file"""
+        try:
+            logging.info(f"Validating JSON file: {json_file}")
+            
+            import json
+            with open(json_file, 'r') as f:
+                data = json.load(f)
+            
+            # Extract rows from Hugging Face format
+            if 'rows' in data:
+                rows = data['rows']
+                df = pd.DataFrame([row['row'] for row in rows])
+            else:
+                df = pd.DataFrame(data)
+            
+            validation_results = {
+                'file_name': os.path.basename(json_file),
+                'total_records': len(df),
+                'total_columns': len(df.columns),
+                'missing_values': {},
+                'duplicate_records': 0,
+                'data_types': {},
+                'negative_values': {}
+            }
+            
+            # Check missing values
+            for column in df.columns:
+                missing_count = df[column].isnull().sum()
+                if missing_count > 0:
+                    validation_results['missing_values'][column] = int(missing_count)
+            
+            # Check duplicates
+            validation_results['duplicate_records'] = int(df.duplicated().sum())
+            
+            # Check data types
+            for column in df.columns:
+                validation_results['data_types'][column] = str(df[column].dtype)
+            
+            # Check negative values in numeric columns
+            numeric_columns = df.select_dtypes(include=['int64', 'float64']).columns
+            for column in numeric_columns:
+                negative_count = (df[column] < 0).sum()
+                if negative_count > 0:
+                    validation_results['negative_values'][column] = int(negative_count)
+            
+            logging.info(f"JSON validation completed: {len(df)} records, {len(df.columns)} columns")
+            return validation_results
+            
+        except Exception as e:
+            logging.error(f"JSON validation failed: {str(e)}")
+            raise
 
-        self.validation_results['missing_values'] = {
-            'passed': len(missing_data) == 0,
-            'issues': missing_data
-        }
+    def run_validation(self):
+        """Run validation on all data files"""
+        try:
+            logging.info("Starting data validation pipeline...")
+            
+            # Find latest data files
+            csv_files = glob.glob(os.path.join(self.raw_data_path, "customer_churn_*.csv"))
+            json_files = glob.glob(os.path.join(self.raw_data_path, "huggingface_churn_*.json"))
+            
+            if not csv_files:
+                raise Exception("No CSV files found for validation")
+            if not json_files:
+                raise Exception("No JSON files found for validation")
+            
+            # Get latest files
+            latest_csv = max(csv_files, key=os.path.getctime)
+            latest_json = max(json_files, key=os.path.getctime)
+            
+            # Validate both files
+            csv_results = self.validate_csv_data(latest_csv)
+            json_results = self.validate_json_data(latest_json)
+            
+            # Generate report
+            report_path = self.generate_validation_report(csv_results, json_results)
+            
+            logging.info("Data validation completed successfully")
+            return {
+                'status': 'success',
+                'csv_results': csv_results,
+                'json_results': json_results,
+                'report_path': report_path,
+                'timestamp': datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logging.error(f"Data validation pipeline failed: {str(e)}")
+            raise
 
-        return len(missing_data) == 0
-
-    def validate_value_ranges(self, df, range_constraints):
-        """Validate value ranges for numerical columns"""
-        range_issues = []
-
-        for column, constraints in range_constraints.items():
-            if column in df.columns:
-                min_val, max_val = constraints
-                out_of_range = df[
-                    (df[column] < min_val) | (df[column] > max_val)
-                ][column].count()
-
-                if out_of_range > 0:
-                    range_issues.append({
-                        'column': column,
-                        'expected_range': f"{min_val}-{max_val}",
-                        'violations': int(out_of_range)
-                    })
-
-        self.validation_results['value_ranges'] = {
-            'passed': len(range_issues) == 0,
-            'issues': range_issues
-        }
-
-        return len(range_issues) == 0
-
-    def validate_duplicates(self, df, unique_columns):
-        """Check for duplicate records"""
-        duplicate_issues = []
-
-        for column in unique_columns:
-            if column in df.columns:
-                duplicates = df[column].duplicated().sum()
-                if duplicates > 0:
-                    duplicate_issues.append({
-                        'column': column,
-                        'duplicate_count': int(duplicates)
-                    })
-
-        total_duplicates = df.duplicated().sum()
-
-        self.validation_results['duplicates'] = {
-            'passed': total_duplicates == 0,
-            'total_duplicate_rows': int(total_duplicates),
-            'column_issues': duplicate_issues
-        }
-
-        return total_duplicates == 0
-
-    def validate_categorical_values(self, df, allowed_values):
-        """Validate categorical column values"""
-        categorical_issues = []
-
-        for column, valid_values in allowed_values.items():
-            if column in df.columns:
-                invalid_values = df[~df[column].isin(valid_values)][column].unique()
-                if len(invalid_values) > 0:
-                    categorical_issues.append({
-                        'column': column,
-                        'invalid_values': invalid_values.tolist(),
-                        'valid_values': valid_values
-                    })
-
-        self.validation_results['categorical_values'] = {
-            'passed': len(categorical_issues) == 0,
-            'issues': categorical_issues
-        }
-
-        return len(categorical_issues) == 0
-
-    def run_complete_validation(self, df):
-        """Run all validation checks for customer churn data"""
-        logging.info("Starting data quality validation")
-
-        # Define validation rules for churn dataset
-        expected_types = {
-            'customerID': 'object',
-            'tenure': 'int',
-            'MonthlyCharges': 'float',
-            'TotalCharges': 'object',  # May contain spaces, needs cleaning
-            'Churn': 'object'
-        }
-
-        critical_columns = ['customerID', 'Churn']
-
-        range_constraints = {
-            'tenure': (0, 100),
-            'MonthlyCharges': (0, 200)
-        }
-
-        unique_columns = ['customerID']
-
-        allowed_values = {
-            'Churn': ['Yes', 'No'],
-            'gender': ['Male', 'Female'],
-            'Partner': ['Yes', 'No'],
-            'Dependents': ['Yes', 'No']
-        }
-
-        # Run validations
-        results = {
-            'data_types': self.validate_data_types(df, expected_types),
-            'missing_values': self.validate_missing_values(df, critical_columns),
-            'value_ranges': self.validate_value_ranges(df, range_constraints),
-            'duplicates': self.validate_duplicates(df, unique_columns),
-            'categorical_values': self.validate_categorical_values(df, allowed_values)
-        }
-
-        overall_passed = all(results.values())
-
-        self.validation_results['overall'] = {
-            'passed': overall_passed,
-            'timestamp': datetime.now().isoformat(),
-            'total_records': len(df),
-            'total_columns': len(df.columns)
-        }
-
-        logging.info(f"Validation completed. Overall passed: {overall_passed}")
-        return self.validation_results
-
-    def generate_quality_report(self, output_path):
-        """Generate comprehensive data quality report"""
-        report_path = f"{output_path}/data_quality_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
-
-        with open(report_path, 'w') as f:
-            json.dump(self.validation_results, f, indent=2)
-
-        logging.info(f"Quality report generated: {report_path}")
-        return report_path
+    def generate_validation_report(self, csv_results, json_results):
+        """Generate Excel report with validation results"""
+        try:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            report_path = f"reports/data_quality_report_{timestamp}.xlsx"
+            
+            with pd.ExcelWriter(report_path, engine='openpyxl') as writer:
+                
+                # Summary sheet
+                summary_data = {
+                    'Data Source': ['CSV File', 'JSON File'],
+                    'File Name': [csv_results['file_name'], json_results['file_name']],
+                    'Total Records': [csv_results['total_records'], json_results['total_records']],
+                    'Total Columns': [csv_results['total_columns'], json_results['total_columns']],
+                    'Missing Values Count': [len(csv_results['missing_values']), len(json_results['missing_values'])],
+                    'Duplicate Records': [csv_results['duplicate_records'], json_results['duplicate_records']],
+                    'Negative Values Count': [len(csv_results['negative_values']), len(json_results['negative_values'])]
+                }
+                summary_df = pd.DataFrame(summary_data)
+                summary_df.to_excel(writer, sheet_name='Summary', index=False)
+                
+                # Missing values sheet
+                missing_data = []
+                for source, results in [('CSV', csv_results), ('JSON', json_results)]:
+                    for column, count in results['missing_values'].items():
+                        missing_data.append({
+                            'Source': source,
+                            'Column': column,
+                            'Missing Count': count,
+                            'Percentage': round((count / results['total_records']) * 100, 2)
+                        })
+                
+                if missing_data:
+                    missing_df = pd.DataFrame(missing_data)
+                    missing_df.to_excel(writer, sheet_name='Missing Values', index=False)
+                
+                # Data types sheet
+                dtype_data = []
+                for source, results in [('CSV', csv_results), ('JSON', json_results)]:
+                    for column, dtype in results['data_types'].items():
+                        dtype_data.append({
+                            'Source': source,
+                            'Column': column,
+                            'Data Type': dtype
+                        })
+                
+                dtype_df = pd.DataFrame(dtype_data)
+                dtype_df.to_excel(writer, sheet_name='Data Types', index=False)
+                
+                # Negative values sheet
+                negative_data = []
+                for source, results in [('CSV', csv_results), ('JSON', json_results)]:
+                    for column, count in results['negative_values'].items():
+                        negative_data.append({
+                            'Source': source,
+                            'Column': column,
+                            'Negative Count': count
+                        })
+                
+                if negative_data:
+                    negative_df = pd.DataFrame(negative_data)
+                    negative_df.to_excel(writer, sheet_name='Negative Values', index=False)
+            
+            logging.info(f"Validation report generated: {report_path}")
+            return report_path
+            
+        except Exception as e:
+            logging.error(f"Report generation failed: {str(e)}")
+            raise
 
 if __name__ == "__main__":
-    # Example usage
-    validator = DataQualityValidator()
-
-    # Create sample data for testing
-    sample_data = {
-        'customerID': ['001', '002', '003'],
-        'tenure': [12, 24, 36],
-        'MonthlyCharges': [50.0, 75.5, 89.99],
-        'Churn': ['No', 'Yes', 'No']
-    }
-    df = pd.DataFrame(sample_data)
-
-    results = validator.run_complete_validation(df)
-    print("Validation completed")
+    validator = DataValidator()
+    result = validator.run_validation()
+    print(f"Validation completed: {result}")
