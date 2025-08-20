@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.so
+.venv/
+venv/
+env/
+
+# Logs
+logs/
+*.log
+
+# Data files
+data/raw/*.csv
+data/raw/*.json
+data/processed/
+data/transformed/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Models
+models/
+*.pkl
+*.joblib
+
+# Temporary files
+*.tmp
+*.temp
