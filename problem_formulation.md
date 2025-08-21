@@ -25,10 +25,15 @@ For this project, we will use two primary data sources to simulate a real-world 
     *   **MonthlyCharges, TotalCharges:** Financial information.
     *   **Churn:** The target variable; whether the customer churned or not.
 
-*   **Source 2: Web Logs (Simulated CSV File)**
-    *   **customerID:** Unique identifier to link with the primary data.
-    *   **logins_last_month:** Number of times the customer logged into their online account in the past month.
-    *   **support_tickets_raised:** Number of support tickets raised by the customer.
+*   **Source 2: Hugging Face Dataset (JSON via API)**
+    *   Dataset: `scikit-learn/churn-prediction` (retrieved via Hugging Face Datasets Server API)
+    *   Format: JSON (top-level object with `rows`, each `row` containing fields below)
+    *   Schema (matches Telco CSV):
+        *   **customerID**, **gender**, **SeniorCitizen**, **Partner**, **Dependents**
+        *   **tenure**, **PhoneService**, **MultipleLines**, **InternetService**, **OnlineSecurity**
+        *   **OnlineBackup**, **DeviceProtection**, **TechSupport**, **StreamingTV**, **StreamingMovies**
+        *   **Contract**, **PaperlessBilling**, **PaymentMethod**, **MonthlyCharges**, **TotalCharges**
+        *   **Churn**
 
 ## 4. Expected Pipeline Outputs
 

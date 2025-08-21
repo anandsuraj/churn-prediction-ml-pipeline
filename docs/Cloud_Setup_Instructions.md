@@ -46,11 +46,14 @@ ssh -i "airflow-key-pair.pem" ubuntu@ec2-54-86-92-182.compute-1.amazonaws.com
 Demo : Read data using Polygon API and write to S3 bucket
 ===========================================================
 13) Create free account on https://polygon.io/ and note the API key 
-14) Create a S3 bucket "pravin-airflow-bucket"
+14) Create a S3 bucket "churn-data-lake"
 
 15) Setting up permissions for EC2 to connect to S3 
 	on EC2 instance ---> Actions ---> Security ---> Modify IAM role ---> Create A New IAM role
-16) On IAM service, create a new IAM role by granting AmazonS3FullAccess and AmazonEC2FullAccess permissions on EC2 instance
+16) On IAM service, create a new IAM role by granting 
+AmazonS3FullAccess 
+AmazonEC2FullAccess 
+permissions on EC2 instance
 17) On EC2 instance, select new role and save
 18) Access Token Generation for IAM user
 	AWS Management Console ---> Profile --> My Security Credential ---> Access keys ---> Create Access Keys

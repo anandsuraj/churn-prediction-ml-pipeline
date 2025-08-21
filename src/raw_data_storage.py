@@ -10,33 +10,35 @@ load_dotenv()
 
 try:
     import boto3
-    from botocore.exceptions import ClientError, NoCredentialsError
+    from botocore.exceptions import ClientError
     BOTO3_AVAILABLE = True
 except ImportError:
     BOTO3_AVAILABLE = False
-    logging.warning("boto3 not available. Cloud storage will be simulated.")
+    logging.warning("boto3 not available. Cloud storage will be disabled.")
 
 logging.basicConfig(level=logging.INFO)
 
 class RawDataStorage:
-    def __init__(self, storage_type="local", base_path="data/raw"):
-        self.storage_type = storage_type
-        self.base_path = base_path
+    def __init__(self, storage_type=None, base_path="data/raw"):
+        # Prefer explicit param, otherwise env var, fallback to "local"
+        env_storage = os.environ.get('STORAGE_TYPE')
+        self.storage_type = storage_type if storage_type is not None else (env_storage or "local")
+        self.base_path = Path(base_path)
         self.s3_client = None
-        
-        if storage_type == "cloud" and BOTO3_AVAILABLE:
+        self.bucket_name = os.environ.get('S3_BUCKET_NAME', 'churn-data-lake')
+
+        if self.storage_type == "cloud" and BOTO3_AVAILABLE:
             self._init_s3_client()
-        
-        self.setup_storage_structure()
+
+        self.base_path.mkdir(parents=True, exist_ok=True)
+        logging.info(f"Storage initialized: type={self.storage_type}, base_path={self.base_path}")
 
     def _init_s3_client(self):
-        """Initialize S3 client"""
+        """Initialize S3 client and create bucket if missing"""
         try:
-            # Get AWS credentials from environment variables
             aws_access_key = os.environ.get('AWS_ACCESS_KEY_ID')
             aws_secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
-            aws_region = os.environ.get('AWS_REGION', 'us-east-1')
-            bucket_name = os.environ.get('S3_BUCKET_NAME', 'churn-data-lake')
+            aws_region = os.environ.get('AWS_REGION', 'ap-south-1')
             
             if not aws_access_key or not aws_secret_key:
                 raise ValueError("AWS credentials not found in environment variables")
@@ -48,80 +50,85 @@ class RawDataStorage:
                 aws_secret_access_key=aws_secret_key
             )
             
-            # Test connection
-            self.s3_client.head_bucket(Bucket=bucket_name)
-            logging.info(f"S3 connected to bucket: {bucket_name}")
+            # Check if bucket exists, create if not
+            try:
+                self.s3_client.head_bucket(Bucket=self.bucket_name)
+            except ClientError as e:
+                if e.response['Error']['Code'] == '404':
+                    self.s3_client.create_bucket(
+                        Bucket=self.bucket_name,
+                        CreateBucketConfiguration={'LocationConstraint': aws_region}
+                    )
+                    logging.info(f"Created S3 bucket: {self.bucket_name}")
+                else:
+                    raise
             
+            logging.info(f"S3 connected to bucket: {self.bucket_name}")
+        
         except Exception as e:
             logging.error(f"S3 initialization failed: {str(e)}")
             self.s3_client = None
 
-    def setup_storage_structure(self):
-        """Create organized folder structure for raw data"""
-        folders = [
-            "customer_data",
-            "usage_data", 
-            "billing_data",
-            "support_data"
-        ]
-
-        for folder in folders:
-            for subfolder in ["daily", "weekly", "monthly"]:
-                path = os.path.join(self.base_path, folder, subfolder)
-                os.makedirs(path, exist_ok=True)
-
-        logging.info("Storage structure created")
-
-    def store_file(self, source_path, data_type, frequency="daily"):
-        """Store file with organized naming and partitioning"""
+    def store_file(self, source_path, source, data_type="churn"):
+        """Store a single file locally and optionally to S3 with partitioning by source, type, timestamp"""
         timestamp = datetime.now()
         date_partition = timestamp.strftime("%Y/%m/%d")
 
-        destination_dir = os.path.join(
-            self.base_path, 
-            f"{data_type}_data", 
-            frequency, 
-            date_partition
-        )
-        os.makedirs(destination_dir, exist_ok=True)
+        # Create destination path: data/raw/sources/{source}/{data_type}/{date_partition}/filename
+        destination_dir = self.base_path / "sources" / source / data_type / date_partition
+        destination_dir.mkdir(parents=True, exist_ok=True)
 
-        filename = f"{data_type}_{timestamp.strftime('%Y%m%d_%H%M%S')}{Path(source_path).suffix}"
-        destination_path = os.path.join(destination_dir, filename)
+        filename = f"{source}_{data_type}_{timestamp.strftime('%Y%m%d_%H%M%S')}{Path(source_path).suffix}"
+        destination_path = destination_dir / filename
 
+        # Copy to local
         shutil.copy2(source_path, destination_path)
-        logging.info(f"File stored: {destination_path}")
+        logging.info(f"File stored locally: {destination_path}")
 
-        return destination_path
+        # Upload to cloud if enabled
+        s3_url = None
+        if self.storage_type == "cloud" and self.s3_client:
+            # S3 key mirrors local relative path
+            relative_path = destination_path.relative_to(self.base_path)
+            s3_key = str(relative_path).replace("\\", "/")
+            try:
+                self.s3_client.upload_file(str(destination_path), self.bucket_name, s3_key)
+                s3_url = f"s3://{self.bucket_name}/{s3_key}"
+                logging.info(f"Uploaded to S3: {s3_url}")
+            except Exception as e:
+                logging.error(f"S3 upload failed: {str(e)}")
 
-    def upload_to_cloud(self, local_path, s3_key=None):
-        """Upload file to S3"""
-        if self.storage_type != "cloud":
-            logging.info("Cloud storage not enabled")
-            return local_path
-        
-        if not self.s3_client:
-            logging.warning("S3 client not available")
-            return local_path
-        
+        return {"local_path": str(destination_path), "s3_url": s3_url}
+
+    def store_ingested_files(self, ingestion_result):
+        """Store files from DataIngestionPipeline.run_ingestion"""
         try:
-            # Get bucket name from environment
-            bucket_name = os.environ.get('S3_BUCKET_NAME', 'churn-data-lake')
-            
-            # Generate S3 key if not provided
-            if not s3_key:
-                timestamp = datetime.now().strftime("%Y/%m/%d")
-                filename = Path(local_path).name
-                s3_key = f"raw_data/{timestamp}/{filename}"
-            
-            # Upload to S3
-            self.s3_client.upload_file(local_path, bucket_name, s3_key)
-            s3_url = f"s3://{bucket_name}/{s3_key}"
-            logging.info(f"Uploaded to S3: {s3_url}")
-            return s3_url
-            
+            results = []
+            # Store CSV file
+            if 'csv_file' in ingestion_result and ingestion_result['csv_file']:
+                result = self.store_file(
+                    source_path=ingestion_result['csv_file'],
+                    source='telco_csv',
+                    data_type='churn'
+                )
+                results.append(result)
+                logging.info(f"Stored CSV file from ingestion: {result['local_path']}")
+
+            # Store Hugging Face JSON file
+            if 'huggingface_file' in ingestion_result and ingestion_result['huggingface_file']:
+                result = self.store_file(
+                    source_path=ingestion_result['huggingface_file'],
+                    source='huggingface',
+                    data_type='churn'
+                )
+                results.append(result)
+                logging.info(f"Stored Hugging Face file from ingestion: {result['local_path']}")
+
+            return results
+
         except Exception as e:
-            logging.error(f"S3 upload failed: {str(e)}")
-            return local_path
+            logging.error(f"Failed to store ingested files: {str(e)}")
+            raise
 
     def create_data_catalog(self):
         """Create metadata catalog for stored data"""
@@ -130,29 +137,40 @@ class RawDataStorage:
             'last_updated': datetime.now().isoformat()
         }
 
-        for root, dirs, files in os.walk(self.base_path):
-            for file in files:
-                if not file.startswith('.'):
-                    file_path = os.path.join(root, file)
-                    file_info = {
-                        'file_name': file,
-                        'file_path': file_path,
-                        'size_bytes': os.path.getsize(file_path),
-                        'created_date': datetime.fromtimestamp(
-                            os.path.getctime(file_path)
-                        ).isoformat()
-                    }
-                    catalog['datasets'].append(file_info)
+        for file_path in self.base_path.rglob("*"):
+            if file_path.is_file() and not file_path.name.startswith('.'):
+                file_info = {
+                    'file_name': file_path.name,
+                    'file_path': str(file_path),
+                    'size_bytes': file_path.stat().st_size,
+                    'created_date': datetime.fromtimestamp(file_path.stat().st_ctime).isoformat()
+                }
+                catalog['datasets'].append(file_info)
 
-        catalog_path = os.path.join(self.base_path, 'data_catalog.json')
+        catalog_path = self.base_path / 'data_catalog.json'
         import json
         with open(catalog_path, 'w') as f:
             json.dump(catalog, f, indent=2)
 
         logging.info(f"Data catalog created: {catalog_path}")
-        return catalog_path
+        return str(catalog_path)
 
 if __name__ == "__main__":
-    storage = RawDataStorage()
+    from data_ingestion import DataIngestionPipeline
+    storage = RawDataStorage(storage_type=os.environ.get('STORAGE_TYPE'))  # Change to "cloud" for S3 if setup
+
+    pipeline = DataIngestionPipeline()
+    ingestion_result = pipeline.run_ingestion()
+    stored_files = storage.store_ingested_files(ingestion_result)
     catalog = storage.create_data_catalog()
-    print(f"Storage setup completed with catalog: {catalog}")
+
+    print(f"Stored files: {stored_files}")
+    print(f"Catalog created: {catalog}")
+    print("""
+    Folder/Bucket Structure:
+    - data/raw/sources/{source}/{data_type}/{YYYY}/{MM}/{DD}/{filename}
+      - source: e.g., 'telco_csv' or 'huggingface'
+      - data_type: e.g., 'customer' or 'churn'
+      - Timestamp partition: YYYY/MM/DD
+      - S3 mirrors this under the bucket root.
+    """)

@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  pipeline:
+    build: .
+    image: churn-prediction-pipeline:latest
+    container_name: churn-pipeline
+    env_file:
+      - .env
+    environment:
+      - STORAGE_TYPE=${STORAGE_TYPE:-local}
+      - AWS_REGION=${AWS_REGION:-ap-south-1}
+      - S3_BUCKET_NAME=${S3_BUCKET_NAME:-churn-data-lake}
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./reports:/app/reports
+    command: ["python", "main_pipeline.py"]

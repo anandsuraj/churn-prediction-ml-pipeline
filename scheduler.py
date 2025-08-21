@@ -104,8 +104,6 @@ class PipelineScheduler:
             logging.info("Scheduler stopped by user")
 
 # Job Functions
-
-
 def run_data_ingestion():
     """Run data ingestion pipeline"""
     pipeline = DataIngestionPipeline()
@@ -148,8 +146,8 @@ SCHEDULED_JOBS = [
     {
         'name': 'Data Validation',
         'function': run_data_validation,
-        'type': 'daily',
-        'time': '10:00'
+        'type': 'hourly',
+        'time': None # '10:00'
     },
     {
         'name': 'Data Preparation',

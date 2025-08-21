@@ -21,17 +21,6 @@ The raw data storage component was already implemented but needed testing and in
 
 **Files Updated**: `main_pipeline.py`, `scheduler.py`
 
-The step sequence was corrected to match the assignment requirements:
-
-**Before (Incorrect)**:
-1. Step 1: Data Ingestion
-2. Step 2: Data Validation
-
-**After (Correct)**:
-1. Step 1: Problem Formulation (not implemented in code)
-2. Step 2: Data Ingestion
-3. Step 3: Raw Data Storage ← **This Step**
-4. Step 4: Data Validation
 
 ### 3. Pipeline Integration ✅
 
@@ -168,15 +157,3 @@ The raw data storage implementation is now complete and ready for the next pipel
 4. **Step 8**: Data Versioning - Version control for datasets
 5. **Step 9**: Model Building - Train ML models
 6. **Step 10**: Pipeline Orchestration - Complete automation
-
-## Conclusion
-
-Step 3: Raw Data Storage has been successfully implemented and integrated into the pipeline. The implementation:
-
-- ✅ Meets all assignment requirements
-- ✅ Follows best practices for data lake organization
-- ✅ Includes comprehensive testing and documentation
-- ✅ Is production-ready and extensible
-- ✅ Correctly positioned in the pipeline sequence
-
-The raw data storage component is now fully functional and ready to support the remaining pipeline steps.

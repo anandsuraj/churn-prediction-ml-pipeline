@@ -4,6 +4,8 @@ import os
 import logging
 from datetime import datetime
 import json
+import glob
+import time
 
 # Configure logging
 os.makedirs('logs', exist_ok=True)
@@ -65,9 +67,23 @@ class DataIngestionPipeline:
                 'offset': 0,
                 'length': 100
             }
-            
-            response = requests.get(api_url, params=params, timeout=30)
-            if response.status_code == 200:
+            # Retry with exponential backoff on transient errors
+            max_retries = 3
+            backoff = 2
+            last_status = None
+            for attempt in range(1, max_retries + 1):
+                try:
+                    response = requests.get(api_url, params=params, timeout=30)
+                    last_status = response.status_code
+                    if response.status_code == 200:
+                        break
+                    logging.warning(f"HF API HTTP {response.status_code} (attempt {attempt}/{max_retries})")
+                except Exception as e:
+                    logging.warning(f"HF API request failed (attempt {attempt}/{max_retries}): {e}")
+                if attempt < max_retries:
+                    time.sleep(backoff ** attempt)
+
+            if last_status == 200:
                 api_data = response.json()
                 
                 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -84,11 +100,20 @@ class DataIngestionPipeline:
                 
                 return filepath
             else:
-                raise Exception(f"Failed to fetch Hugging Face data: HTTP {response.status_code}")
+                raise Exception(f"Failed to fetch Hugging Face data: HTTP {last_status}")
             
         except Exception as e:
             logging.error(f"Hugging Face ingestion failed: {str(e)}")
-            raise
+            # Fallback to latest cached HF file if available
+            try:
+                hf_files = glob.glob(os.path.join(self.raw_data_path, "huggingface_churn_*.json"))
+                if hf_files:
+                    latest_hf = max(hf_files, key=os.path.getctime)
+                    logging.warning(f"Using cached Hugging Face file: {latest_hf}")
+                    return latest_hf
+            except Exception:
+                pass
+            return None
 
     def run_ingestion(self):
         """Run complete data ingestion from both sources"""
@@ -101,7 +126,10 @@ class DataIngestionPipeline:
             
             logging.info("Data ingestion completed successfully")
             logging.info(f"CSV file: {csv_file}")
-            logging.info(f"Hugging Face file: {hf_file}")
+            if hf_file:
+                logging.info(f"Hugging Face file: {hf_file}")
+            else:
+                logging.warning("Hugging Face file not available; proceeding with CSV only")
             
             return {
                 'status': 'success',

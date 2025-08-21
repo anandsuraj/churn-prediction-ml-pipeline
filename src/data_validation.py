@@ -126,18 +126,16 @@ class DataValidator:
             csv_files = glob.glob(os.path.join(self.raw_data_path, "customer_churn_*.csv"))
             json_files = glob.glob(os.path.join(self.raw_data_path, "huggingface_churn_*.json"))
             
-            if not csv_files:
-                raise Exception("No CSV files found for validation")
-            if not json_files:
-                raise Exception("No JSON files found for validation")
+            if not csv_files and not json_files:
+                raise Exception("No data files found for validation")
             
             # Get latest files
-            latest_csv = max(csv_files, key=os.path.getctime)
-            latest_json = max(json_files, key=os.path.getctime)
+            latest_csv = max(csv_files, key=os.path.getctime) if csv_files else None
+            latest_json = max(json_files, key=os.path.getctime) if json_files else None
             
             # Validate both files
-            csv_results = self.validate_csv_data(latest_csv)
-            json_results = self.validate_json_data(latest_json)
+            csv_results = self.validate_csv_data(latest_csv) if latest_csv else None
+            json_results = self.validate_json_data(latest_json) if latest_json else None
             
             # Generate report
             report_path = self.generate_validation_report(csv_results, json_results)
@@ -164,21 +162,27 @@ class DataValidator:
             with pd.ExcelWriter(report_path, engine='openpyxl') as writer:
                 
                 # Summary sheet
+                sources = []
+                if csv_results:
+                    sources.append(('CSV File', csv_results))
+                if json_results:
+                    sources.append(('JSON File', json_results))
+
                 summary_data = {
-                    'Data Source': ['CSV File', 'JSON File'],
-                    'File Name': [csv_results['file_name'], json_results['file_name']],
-                    'Total Records': [csv_results['total_records'], json_results['total_records']],
-                    'Total Columns': [csv_results['total_columns'], json_results['total_columns']],
-                    'Missing Values Count': [len(csv_results['missing_values']), len(json_results['missing_values'])],
-                    'Duplicate Records': [csv_results['duplicate_records'], json_results['duplicate_records']],
-                    'Negative Values Count': [len(csv_results['negative_values']), len(json_results['negative_values'])]
+                    'Data Source': [s[0] for s in sources],
+                    'File Name': [s[1]['file_name'] for s in sources],
+                    'Total Records': [s[1]['total_records'] for s in sources],
+                    'Total Columns': [s[1]['total_columns'] for s in sources],
+                    'Missing Values Count': [len(s[1]['missing_values']) for s in sources],
+                    'Duplicate Records': [s[1]['duplicate_records'] for s in sources],
+                    'Negative Values Count': [len(s[1]['negative_values']) for s in sources]
                 }
                 summary_df = pd.DataFrame(summary_data)
                 summary_df.to_excel(writer, sheet_name='Summary', index=False)
                 
                 # Missing values sheet
                 missing_data = []
-                for source, results in [('CSV', csv_results), ('JSON', json_results)]:
+                for source, results in [(n, r) for n, r in [('CSV', csv_results), ('JSON', json_results)] if r]:
                     for column, count in results['missing_values'].items():
                         missing_data.append({
                             'Source': source,
@@ -193,7 +197,7 @@ class DataValidator:
                 
                 # Data types sheet
                 dtype_data = []
-                for source, results in [('CSV', csv_results), ('JSON', json_results)]:
+                for source, results in [(n, r) for n, r in [('CSV', csv_results), ('JSON', json_results)] if r]:
                     for column, dtype in results['data_types'].items():
                         dtype_data.append({
                             'Source': source,
@@ -206,7 +210,7 @@ class DataValidator:
                 
                 # Negative values sheet
                 negative_data = []
-                for source, results in [('CSV', csv_results), ('JSON', json_results)]:
+                for source, results in [(n, r) for n, r in [('CSV', csv_results), ('JSON', json_results)] if r]:
                     for column, count in results['negative_values'].items():
                         negative_data.append({
                             'Source': source,
