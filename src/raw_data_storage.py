@@ -23,7 +23,20 @@ except ImportError:
     BOTO3_AVAILABLE = False
     logging.warning("boto3 not available. Cloud storage will be disabled.")
 
-logging.basicConfig(level=logging.INFO)
+# Configure module logger (file + console)
+os.makedirs('logs', exist_ok=True)
+logger = logging.getLogger('raw_data_storage')
+if not logger.handlers:
+    logger.setLevel(logging.INFO)
+    fmt = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    fh = logging.FileHandler('logs/raw_data_storage.log')
+    fh.setFormatter(fmt)
+    ch = logging.StreamHandler()
+    ch.setFormatter(fmt)
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+    # Route existing logging.* calls to this module logger
+    logging = logger
 
 # Class: manages raw file layout locally and in S3
 class RawDataStorage:

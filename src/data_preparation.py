@@ -23,7 +23,20 @@ import glob
 import warnings
 warnings.filterwarnings('ignore')
 
-logging.basicConfig(level=logging.INFO)
+# Configure module logger (file + console)
+os.makedirs('logs', exist_ok=True)
+logger = logging.getLogger('data_preparation')
+if not logger.handlers:
+    logger.setLevel(logging.INFO)
+    fmt = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    fh = logging.FileHandler('logs/data_preparation.log')
+    fh.setFormatter(fmt)
+    ch = logging.StreamHandler()
+    ch.setFormatter(fmt)
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+    # Route existing logging.* calls to this module logger
+    logging = logger
 
 # Class: cleans, encodes, engineers features, scales and runs EDA
 class DataPreparationPipeline:

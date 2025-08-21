@@ -17,16 +17,20 @@ import json
 import glob
 import time
 
-# Configure logging
+# Configure module logger (file + console)
 os.makedirs('logs', exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('logs/data_ingestion.log'),
-        logging.StreamHandler()
-    ]
-)
+logger = logging.getLogger('data_ingestion')
+if not logger.handlers:
+    logger.setLevel(logging.INFO)
+    fmt = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    fh = logging.FileHandler('logs/data_ingestion.log')
+    fh.setFormatter(fmt)
+    ch = logging.StreamHandler()
+    ch.setFormatter(fmt)
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+    # Route existing logging.* calls to this module logger
+    logging = logger
 
 # Class: orchestrates ingestion from CSV and Hugging Face API
 class DataIngestionPipeline:

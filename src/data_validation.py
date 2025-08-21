@@ -15,16 +15,20 @@ import logging
 from datetime import datetime
 import glob
 
-# Configure logging
+# Configure module logger (file + console)
 os.makedirs('logs', exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('logs/data_validation.log'),
-        logging.StreamHandler()
-    ]
-)
+logger = logging.getLogger('data_validation')
+if not logger.handlers:
+    logger.setLevel(logging.INFO)
+    fmt = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    fh = logging.FileHandler('logs/data_validation.log')
+    fh.setFormatter(fmt)
+    ch = logging.StreamHandler()
+    ch.setFormatter(fmt)
+    logger.addHandler(fh)
+    logger.addHandler(ch)
+    # Route existing logging.* calls to this module logger
+    logging = logger
 
 # Class: validates raw CSV/JSON data and emits an Excel quality report
 class DataValidator:
