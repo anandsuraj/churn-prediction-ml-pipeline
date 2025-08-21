@@ -1,3 +1,14 @@
+"""
+Data Validation
+---------------
+Performs basic quality checks on ingested CSV and JSON datasets:
+- Missing values
+- Duplicate records
+- Data types and negative values in numeric columns
+
+Generates an Excel report summarizing findings. If one source is missing,
+the report is created for the available source.
+"""
 import pandas as pd
 import os
 import logging
@@ -15,11 +26,14 @@ logging.basicConfig(
     ]
 )
 
+# Class: validates raw CSV/JSON data and emits an Excel quality report
 class DataValidator:
+    """Validator for raw data files to ensure minimum quality before prep."""
     def __init__(self, raw_data_path="data/raw"):
         self.raw_data_path = raw_data_path
         os.makedirs('reports', exist_ok=True)
 
+    # Validate a CSV file: missing values, dtypes, negatives, duplicates
     def validate_csv_data(self, csv_file):
         """Validate CSV data file"""
         try:
@@ -64,6 +78,7 @@ class DataValidator:
             logging.error(f"CSV validation failed: {str(e)}")
             raise
 
+    # Validate a JSON file (HF rows format supported)
     def validate_json_data(self, json_file):
         """Validate JSON data file"""
         try:
@@ -117,6 +132,7 @@ class DataValidator:
             logging.error(f"JSON validation failed: {str(e)}")
             raise
 
+    # Run validation on latest available CSV/JSON under raw path
     def run_validation(self):
         """Run validation on all data files"""
         try:
@@ -153,6 +169,7 @@ class DataValidator:
             logging.error(f"Data validation pipeline failed: {str(e)}")
             raise
 
+    # Create an Excel report summarizing validation metrics
     def generate_validation_report(self, csv_results, json_results):
         """Generate Excel report with validation results"""
         try:

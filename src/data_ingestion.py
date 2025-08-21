@@ -1,3 +1,13 @@
+"""
+Data Ingestion
+--------------
+Fetches raw churn data from two sources:
+  1) Telco CSV (public GitHub)
+  2) Hugging Face dataset API (JSON)
+
+Adds basic logging, retry with backoff for the API, and returns file paths
+for downstream stages (storage, validation, preparation).
+"""
 import pandas as pd
 import requests
 import os
@@ -18,11 +28,15 @@ logging.basicConfig(
     ]
 )
 
+# Class: orchestrates ingestion from CSV and Hugging Face API
 class DataIngestionPipeline:
+    """Ingestion pipeline for fetching CSV and Hugging Face JSON data."""
+    # Initialize with base directory for saving raw files
     def __init__(self, raw_data_path="data/raw"):
         self.raw_data_path = raw_data_path
         os.makedirs(raw_data_path, exist_ok=True)
 
+    # Download CSV dataset and save to raw folder
     def ingest_csv_data(self):
         """Ingest customer churn data from CSV source"""
         try:
@@ -53,6 +67,7 @@ class DataIngestionPipeline:
             logging.error(f"CSV ingestion failed: {str(e)}")
             raise
 
+    # Fetch JSON rows from Hugging Face dataset server (with retry)
     def ingest_huggingface_data(self):
         """Ingest customer data from Hugging Face API"""
         try:
@@ -67,7 +82,7 @@ class DataIngestionPipeline:
                 'offset': 0,
                 'length': 100
             }
-            # Retry with exponential backoff on transient errors
+            # Retry with exponential backoff on transient errors (e.g., 5xx)
             max_retries = 3
             backoff = 2
             last_status = None
@@ -115,6 +130,7 @@ class DataIngestionPipeline:
                 pass
             return None
 
+    # Run full ingestion (CSV + HF) and return file paths
     def run_ingestion(self):
         """Run complete data ingestion from both sources"""
         try:

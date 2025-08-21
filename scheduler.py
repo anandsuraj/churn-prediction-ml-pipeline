@@ -35,9 +35,7 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-
 # Import pipeline modules
-
 
 class PipelineScheduler:
     def __init__(self):
@@ -109,18 +107,15 @@ def run_data_ingestion():
     pipeline = DataIngestionPipeline()
     return pipeline.run_ingestion()
 
-
 def run_raw_data_storage():
     """Run raw data storage pipeline"""
     storage = RawDataStorage()
     return storage.create_data_catalog()
 
-
 def run_data_validation():
     """Run data validation pipeline"""
     validator = DataValidator()
     return validator.run_validation()
-
 
 def run_data_preparation():
     """Run data preparation (placeholder)"""

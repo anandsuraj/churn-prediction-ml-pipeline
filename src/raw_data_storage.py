@@ -1,3 +1,10 @@
+"""
+Raw Data Storage
+----------------
+Organizes raw files into a partitioned local structure and optionally mirrors
+the same layout in S3 when STORAGE_TYPE=cloud. Also creates a simple JSON
+catalog of stored files for discoverability.
+"""
 import os
 import shutil
 from datetime import datetime
@@ -18,7 +25,9 @@ except ImportError:
 
 logging.basicConfig(level=logging.INFO)
 
+# Class: manages raw file layout locally and in S3
 class RawDataStorage:
+    """Manage local/S3 storage of raw ingested files and metadata catalog."""
     def __init__(self, storage_type=None, base_path="data/raw"):
         # Prefer explicit param, otherwise env var, fallback to "local"
         env_storage = os.environ.get('STORAGE_TYPE')
@@ -33,8 +42,9 @@ class RawDataStorage:
         self.base_path.mkdir(parents=True, exist_ok=True)
         logging.info(f"Storage initialized: type={self.storage_type}, base_path={self.base_path}")
 
+    # Initialize S3 client and ensure bucket exists (if permissions allow)
     def _init_s3_client(self):
-        """Initialize S3 client and create bucket if missing"""
+        """Initialize S3 client and create bucket if missing."""
         try:
             aws_access_key = os.environ.get('AWS_ACCESS_KEY_ID')
             aws_secret_key = os.environ.get('AWS_SECRET_ACCESS_KEY')
@@ -69,8 +79,12 @@ class RawDataStorage:
             logging.error(f"S3 initialization failed: {str(e)}")
             self.s3_client = None
 
+    # Copy file into partitioned layout and optionally upload to S3
     def store_file(self, source_path, source, data_type="churn"):
-        """Store a single file locally and optionally to S3 with partitioning by source, type, timestamp"""
+        """Store a single file locally and optionally to S3.
+
+        Layout: data/raw/sources/{source}/{data_type}/YYYY/MM/DD/filename
+        """
         timestamp = datetime.now()
         date_partition = timestamp.strftime("%Y/%m/%d")
 
@@ -100,6 +114,7 @@ class RawDataStorage:
 
         return {"local_path": str(destination_path), "s3_url": s3_url}
 
+    # Store outputs from the ingestion step (CSV and/or HF JSON)
     def store_ingested_files(self, ingestion_result):
         """Store files from DataIngestionPipeline.run_ingestion"""
         try:
@@ -130,6 +145,7 @@ class RawDataStorage:
             logging.error(f"Failed to store ingested files: {str(e)}")
             raise
 
+    # Walk storage and emit a JSON catalog of files
     def create_data_catalog(self):
         """Create metadata catalog for stored data"""
         catalog = {

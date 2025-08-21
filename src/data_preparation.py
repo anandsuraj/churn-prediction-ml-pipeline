@@ -1,21 +1,38 @@
+"""
+Data Preparation
+----------------
+Cleans and preprocesses the ingested dataset for modeling:
+- Handles missing values (numeric median; categorical mode)
+- One-hot encodes categorical features; maps target 'Churn' to 0/1
+- Creates derived features and handles outliers (IQR capping)
+- Scales numerical features (StandardScaler)
+
+Saves:
+- EDA outputs under data/eda/raw and data/eda/cleaned
+- Cleaned dataset and scaled variant under data/processed
+"""
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.preprocessing import StandardScaler
 from sklearn.impute import SimpleImputer
 import logging
+import os
+import glob
 import warnings
 warnings.filterwarnings('ignore')
 
 logging.basicConfig(level=logging.INFO)
 
+# Class: cleans, encodes, engineers features, scales and runs EDA
 class DataPreparationPipeline:
     def __init__(self):
         self.encoders = {}
         self.scalers = {}
         self.imputers = {}
 
+    # Load CSV into DataFrame
     def load_data(self, file_path):
         """Load data from CSV file"""
         try:
@@ -26,6 +43,7 @@ class DataPreparationPipeline:
             logging.error(f"Error loading data: {str(e)}")
             raise
 
+    # Fill missing values (numeric median, categorical mode)
     def handle_missing_values(self, df):
         """Handle missing values using appropriate strategies"""
         df_cleaned = df.copy()
@@ -53,29 +71,30 @@ class DataPreparationPipeline:
 
         return df_cleaned
 
+    # One-hot encode categorical columns; map target to 0/1
     def encode_categorical_variables(self, df):
-        """Encode categorical variables"""
+        """One-hot encode categorical variables; map target 'Churn' to 0/1"""
         df_encoded = df.copy()
-        categorical_columns = df.select_dtypes(include=['object']).columns.tolist()
+        categorical_columns = df_encoded.select_dtypes(include=['object']).columns.tolist()
 
-        # Remove customerID from encoding
-        if 'customerID' in categorical_columns:
-            categorical_columns.remove('customerID')
+        # Remove identifier and target from one-hot
+        for col in ['customerID', 'Churn']:
+            if col in categorical_columns:
+                categorical_columns.remove(col)
 
-        for column in categorical_columns:
-            if column != 'Churn':  # Don't encode target variable yet
-                le = LabelEncoder()
-                df_encoded[column] = le.fit_transform(df_encoded[column])
-                self.encoders[column] = le
-                logging.info(f"Encoded column: {column}")
+        # One-hot encode with drop_first to reduce multicollinearity
+        if categorical_columns:
+            df_encoded = pd.get_dummies(df_encoded, columns=categorical_columns, drop_first=True)
+            logging.info(f"One-hot encoded {len(categorical_columns)} categorical columns")
 
         # Encode target variable
-        if 'Churn' in df.columns:
+        if 'Churn' in df_encoded.columns:
             df_encoded['Churn'] = df_encoded['Churn'].map({'Yes': 1, 'No': 0})
             logging.info("Target variable 'Churn' encoded")
 
         return df_encoded
 
+    # Add engineered features helpful for churn modeling
     def create_derived_features(self, df):
         """Create derived features for better prediction"""
         df_features = df.copy()
@@ -98,6 +117,7 @@ class DataPreparationPipeline:
         logging.info("Derived features created")
         return df_features
 
+    # Cap outliers using IQR bounds for stability
     def handle_outliers(self, df, columns):
         """Handle outliers using IQR method"""
         df_clean = df.copy()
@@ -121,6 +141,7 @@ class DataPreparationPipeline:
 
         return df_clean
 
+    # Standard scale numeric features (excludes ID/target)
     def scale_numerical_features(self, df):
         """Scale numerical features"""
         df_scaled = df.copy()
@@ -137,7 +158,8 @@ class DataPreparationPipeline:
         logging.info(f"Scaled {len(numerical_columns)} numerical features")
         return df_scaled
 
-    def perform_eda(self, df, output_dir="output"):
+    # Save summary stats, histograms, box plots, correlation heatmap
+    def perform_eda(self, df, output_dir="data/eda"):
         """Perform exploratory data analysis"""
         import os
         os.makedirs(output_dir, exist_ok=True)
@@ -165,7 +187,7 @@ class DataPreparationPipeline:
         plt.savefig(f"{output_dir}/correlation_heatmap.png")
         plt.close()
 
-        # Feature distributions
+        # Feature distributions (histograms)
         numeric_columns = df.select_dtypes(include=[np.number]).columns[:6]  # First 6 numeric columns
         fig, axes = plt.subplots(2, 3, figsize=(15, 10))
         axes = axes.ravel()
@@ -181,8 +203,22 @@ class DataPreparationPipeline:
         plt.savefig(f"{output_dir}/feature_distributions.png")
         plt.close()
 
+        # Box plots for the same numeric columns
+        if len(numeric_columns) > 0:
+            fig, axes = plt.subplots(2, 3, figsize=(15, 10))
+            axes = axes.ravel()
+            for i, column in enumerate(numeric_columns):
+                if i < len(axes):
+                    sns.boxplot(x=df[column], ax=axes[i])
+                    axes[i].set_title(f'{column} Box Plot')
+                    axes[i].set_xlabel(column)
+            plt.tight_layout()
+            plt.savefig(f"{output_dir}/box_plots.png")
+            plt.close()
+
         logging.info(f"EDA plots saved to {output_dir}")
 
+    # Execute full preparation pipeline and persist outputs
     def run_preparation_pipeline(self, input_file, output_file):
         """Run complete data preparation pipeline"""
         logging.info("Starting data preparation pipeline")
@@ -202,30 +238,51 @@ class DataPreparationPipeline:
         numerical_columns = ['tenure', 'MonthlyCharges', 'TotalCharges']
         df_outliers_handled = self.handle_outliers(df_features, numerical_columns)
 
-        # Scale features (optional, comment out if not needed for some models)
-        # df_final = self.scale_numerical_features(df_outliers_handled)
+        # Scale features
         df_final = df_outliers_handled
+        df_scaled = self.scale_numerical_features(df_outliers_handled)
 
         # Perform EDA on cleaned data
-        self.perform_eda(df_final, "output/cleaned_data_eda")
+        self.perform_eda(df_final, "data/eda/cleaned")
 
-        # Save cleaned dataset
+        # Save cleaned dataset(s)
         df_final.to_csv(output_file, index=False)
         logging.info(f"Cleaned data saved to {output_file}")
+        scaled_output = os.path.splitext(output_file)[0] + "_scaled.csv"
+        df_scaled.to_csv(scaled_output, index=False)
+        logging.info(f"Scaled cleaned data saved to {scaled_output}")
 
         return df_final
+
+"""Helper: locate the latest ingested CSV under data/raw structures."""
+def find_latest_ingested_csv() -> str:
+    """Find the most recent ingested CSV from known locations."""
+    candidates = []
+    # Legacy flat pattern
+    candidates.extend(glob.glob("data/raw/customer_churn_*.csv"))
+    # New partitioned storage pattern
+    candidates.extend(glob.glob("data/raw/sources/*/churn/*/*/*/*.csv"))
+    if not candidates:
+        raise FileNotFoundError("No ingested CSV files found under data/raw")
+    latest = max(candidates, key=os.path.getctime)
+    return latest
+
 
 if __name__ == "__main__":
     pipeline = DataPreparationPipeline()
 
-    # Example usage
-    input_file = "data/raw/customer_data.csv"  # Update with actual path
+    # Auto-detect latest ingested CSV
+    input_file = find_latest_ingested_csv()
     output_file = "data/processed/cleaned_data.csv"
 
     # Ensure output directory exists
-    import os
     os.makedirs("data/processed", exist_ok=True)
-    os.makedirs("output", exist_ok=True)
+    os.makedirs("data/eda/raw", exist_ok=True)
+    os.makedirs("data/eda/cleaned", exist_ok=True)
 
     print("Data preparation pipeline created")
+    # EDA on raw
+    raw_df = pipeline.load_data(input_file)
+    pipeline.perform_eda(raw_df, "data/eda/raw")
+
     cleaned_data = pipeline.run_preparation_pipeline(input_file, output_file)
