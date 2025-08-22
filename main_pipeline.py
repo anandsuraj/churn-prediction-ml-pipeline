@@ -16,15 +16,14 @@ Usage:
 """
 
 import sys
-import os
-from datetime import datetime
 
 # Add src directory to path
 sys.path.append('src')
 
+from build_model import TrainCustomModel
 from data_ingestion import DataIngestionPipeline
-from raw_data_storage import RawDataStorage
 from data_validation import DataValidator
+from raw_data_storage import RawDataStorage
 
 
 def main():
@@ -49,12 +48,18 @@ def main():
         validator = DataValidator()
         validation_result = validator.run_validation()
 
+        # Run model training
+        print("Step 9: Starting model training pipeline....")
+        model_builder = TrainCustomModel()
+        model_builder.train_model(model_type="logistic_regression")
+
         print(f"\nPipeline completed successfully!")
         print(f"CSV File: {ingestion_result['csv_file']}")
         print(f"Hugging Face File: {ingestion_result['huggingface_file']}")
         print(f"Data Catalog: {storage_result}")
         print(f"Validation Report: {validation_result['report_path']}")
         print(f"Check logs: logs/data_ingestion.log, logs/data_validation.log")
+        print(f"Find Trained models at: src/models")
 
     except Exception as e:
         print(f"Pipeline failed: {str(e)}")

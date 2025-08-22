@@ -7,6 +7,7 @@ scipy==1.11.4
 # Machine Learning
 scikit-learn==1.5.2
 joblib>=1.5.1
+mlflow
 
 # Data Validation
 # great-expectations (optional, not required by current scripts)
