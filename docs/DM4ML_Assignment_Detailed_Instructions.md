@@ -86,14 +86,16 @@ notebook/Python script showcasing the data preparation process -
 Visualisations and summary statistics (e.g., histograms, box plots) - A
 clean dataset ready for transformations
 
-**6. Data Transformation and Storage** - Perform transformations for
-feature engineering: - Create aggregated features (e.g., total spend per
-customer) - Derive new features (e.g., customer tenure, activity
-frequency) - Scale and normalise features where necessary - Store the
-transformed data in a relational database or a data warehouse. -
-**Deliverables:** - SQL schema design or database setup script - Sample
-queries to retrieve transformed data - A summary of the transformation
-logic applied
+**6. Data Transformation and Storage** 
+- Perform transformations for feature engineering: 
+- Create aggregated features (e.g., total spend per customer) 
+- Derive new features (e.g., customer tenure, activity frequency) 
+- Scale and normalise features where necessary 
+- Store the transformed data in a relational database or a data warehouse. 
+
+**Deliverables:** - SQL schema design or database setup script 
+- Sample queries to retrieve transformed data 
+- A summary of the transformation logic applied
 
 **7. Feature Store** - Implement a feature store to manage engineered
 features: - Define metadata for each feature (e.g., description, source,

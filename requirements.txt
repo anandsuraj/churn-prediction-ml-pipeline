@@ -1,7 +1,6 @@
 # Data Processing (pinned for Python 3.12 compatibility)
 numpy==1.26.4
 pandas==2.1.4
-# If you don't need scipy, you can comment this out
 scipy==1.11.4
 
 # Machine Learning
@@ -50,6 +49,9 @@ python-dotenv>=1.0.1
 # Development and Testing
 pytest>=8.3.3
 pytest-cov>=5.0.0
+
+# Database Support
+sqlalchemy>=2.0.0  # For advanced database operations
 
 # Jupyter (for EDA notebooks)
 jupyter>=1.0.0

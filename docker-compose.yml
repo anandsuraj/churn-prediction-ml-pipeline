@@ -11,6 +11,7 @@ services:
       - STORAGE_TYPE=${STORAGE_TYPE:-local}
       - AWS_REGION=${AWS_REGION:-ap-south-1}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME:-churn-data-lake}
+      - DB_PATH=${DB_PATH:-data/processed/churn_data.db}
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs

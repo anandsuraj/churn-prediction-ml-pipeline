@@ -27,7 +27,7 @@ if not logger.handlers:
     ch.setFormatter(fmt)
     logger.addHandler(fh)
     logger.addHandler(ch)
-    # Route existing logging.* calls to this module logger
+
     logging = logger
 
 # Class: validates raw CSV/JSON data and emits an Excel quality report
