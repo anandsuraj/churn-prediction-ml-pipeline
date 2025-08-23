@@ -13,6 +13,7 @@ Pipeline Steps:
 5. Data Preparation (Step 5) - Clean and preprocess data
 6. Data Transformation (Step 6) - Feature engineering and storage
 7. Feature Store (Step 7) - Manage engineered features
+8. Model Training (Step 8) - Train a custom model
 
 Usage:
     python main_pipeline.py
@@ -31,8 +32,8 @@ from data_validation import DataValidator
 from raw_data_storage import RawDataStorage
 from data_transformation_storage import DataTransformationStorage
 from data_preparation import DataPreparationPipeline
+from feature_store import SimpleChurnFeatureStore
 from build_model import TrainCustomModel
-from feature_store import ChurnFeatureStore
 
 def main():
     """Run the complete data management pipeline"""
@@ -63,7 +64,7 @@ def main():
         transformation_result = transformation.run_transformation_pipeline_auto()
 
         print("Step 7: Setting up feature store...")
-        feature_store = ChurnFeatureStore()
+        feature_store = SimpleChurnFeatureStore()
         # Auto-populate feature store from latest training data
         populate_result = feature_store.auto_populate_from_latest_data()
         
@@ -80,7 +81,7 @@ def main():
         print(f"Data Preparation: {preparation_result}")
         print(f"Data Transformation: {transformation_result}")
         print(f"Feature store: {populate_result}")
-        print(f"Feature Store DB Path: {feature_store.db_path}")
+        print(f"Feature Store Path: {feature_store.store_path}")
         print(f"Find Trained models at: src/models")
         print(f"Check logs: logs/data_ingestion.log, logs/data_validation.log, logs/data_preparation.log, logs/data_transformation_storage.log, logs/feature_store.log")
         
