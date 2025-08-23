@@ -27,10 +27,11 @@ import pandas as pd
 sys.path.append('src')
 
 from data_ingestion import DataIngestionPipeline
-from raw_data_storage import RawDataStorage
 from data_validation import DataValidator
+from raw_data_storage import RawDataStorage
 from data_transformation_storage import DataTransformationStorage
 from data_preparation import DataPreparationPipeline
+from build_model import TrainCustomModel
 from feature_store import ChurnFeatureStore
 
 def main():
@@ -66,6 +67,11 @@ def main():
         # Auto-populate feature store from latest training data
         populate_result = feature_store.auto_populate_from_latest_data()
         
+         # Run model training
+        print("Step 9: Starting model training pipeline....")
+        model_builder = TrainCustomModel()
+        model_builder.train_model(model_type="logistic_regression")
+        
         print(f"\nPipeline completed successfully!")
         print(f"CSV File: {ingestion_result['csv_file']}")
         print(f"Hugging Face File: {ingestion_result['huggingface_file']}")
@@ -75,8 +81,9 @@ def main():
         print(f"Data Transformation: {transformation_result}")
         print(f"Feature store: {populate_result}")
         print(f"Feature Store DB Path: {feature_store.db_path}")
+        print(f"Find Trained models at: src/models")
         print(f"Check logs: logs/data_ingestion.log, logs/data_validation.log, logs/data_preparation.log, logs/data_transformation_storage.log, logs/feature_store.log")
-
+        
         # Close feature store connection
         feature_store.close()
 
