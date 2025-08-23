@@ -35,7 +35,7 @@ if not logger.handlers:
     ch.setFormatter(fmt)
     logger.addHandler(fh)
     logger.addHandler(ch)
-    # Route existing logging.* calls to this module logger
+
     logging = logger
 
 # Class: manages raw file layout locally and in S3

@@ -5,9 +5,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# System deps (kept minimal)
+# System deps 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    sqlite3 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python deps
@@ -18,7 +19,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Create writable dirs
-RUN mkdir -p data/raw logs reports
+RUN mkdir -p data/raw data/processed data/processed/training_sets logs reports
+
+# Initialize SQLite database
+RUN sqlite3 data/processed/churn_data.db < database/init.sql
 
 # Default command
 CMD ["python", "main_pipeline.py"]

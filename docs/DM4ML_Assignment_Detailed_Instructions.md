@@ -86,14 +86,16 @@ notebook/Python script showcasing the data preparation process -
 Visualisations and summary statistics (e.g., histograms, box plots) - A
 clean dataset ready for transformations
 
-**6. Data Transformation and Storage** - Perform transformations for
-feature engineering: - Create aggregated features (e.g., total spend per
-customer) - Derive new features (e.g., customer tenure, activity
-frequency) - Scale and normalise features where necessary - Store the
-transformed data in a relational database or a data warehouse. -
-**Deliverables:** - SQL schema design or database setup script - Sample
-queries to retrieve transformed data - A summary of the transformation
-logic applied
+**6. Data Transformation and Storage** 
+- Perform transformations for feature engineering: 
+- Create aggregated features (e.g., total spend per customer) 
+- Derive new features (e.g., customer tenure, activity frequency) 
+- Scale and normalise features where necessary 
+- Store the transformed data in a relational database or a data warehouse. 
+
+**Deliverables:** - SQL schema design or database setup script 
+- Sample queries to retrieve transformed data 
+- A summary of the transformation logic applied
 
 **7. Feature Store** - Implement a feature store to manage engineered
 features: - Define metadata for each feature (e.g., description, source,
@@ -106,9 +108,8 @@ metadata and versions
 **8. Data Versioning** - Use version control for raw and transformed
 datasets to ensure reproducibility: - Track changes in data using tools
 like DVC, Git LFS, or a custom tagging system - Store version metadata
-(e.g., source, timestamp, change log) - **Deliverables:** - DVC/Git
-repository showing dataset versions - Documentation of the versioning
-strategy and workflow
+(e.g., source, timestamp, change log) 
+- **Deliverables:** - DVC/Git repository showing dataset versions - Documentation of the versioning strategy and workflow
 
 **9. Model Building** - Train a machine learning model to predict
 customer churn using the prepared features: - Use a framework like
@@ -174,22 +175,3 @@ orchestration tool - Logs or monitoring dashboard screenshots
 -   Note: As it's a group assignment, only one submission is expected
     from each group. Do not upload the solution individually. If it's
     observed, then a penalty (25% reduction) will be applicable.
-
-
-If you see in this instructions
-
-
-
-/Applications/MAMP/htdocs/churn-prediction-pipeline/docs/DM4ML_Assignment_Detailed_Instructions.md
-
-
-
-I skipped the step 3 that is 3. Raw Data Storage,
-
-
-
-there is a file already there nameed raw_data_storage.py
-
-
-
-test and review it based on the instruction and sequenece everywhere

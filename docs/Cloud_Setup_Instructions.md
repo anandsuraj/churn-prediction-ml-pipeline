@@ -7,19 +7,21 @@ Streamlining Data Workflow with Apache Airflow on AWS EC2
 ssh -i "airflow-key-pair.pem" ubuntu@ec2-54-86-92-182.compute-1.amazonaws.com
 
 3) On AWS instance run following setup commands
-	sudo apt update
-	sudo apt install python3-pip
-	sudo apt install python3-venv
-	python3 -m venv airflow_venv
-	source airflow_venv/bin/activate
-	pip install pandas s3fs apache-airflow
+	sudo yum update -y
+	sudo yum install -y python3 python3-pip
+	sudo pip3 install virtualenv
+	python3 -m virtualenv ~/airflow_venv
+	source ~/airflow_venv/bin/activate
+	pip install pandas s3fs apache-airflow requests
 
 4) On EC2 instance, enable inbound and outbound rules for ssh / http / https
 	
 5) Start the Airflow
-	airflow standalone
+	airflow standaloneSimple auth manager | Password for user 'admin': DAGFnyUUCQAFaPN3
+
 	Login with username provided at time of starting airflow
-        admin  password: FRwDReZ7zrXEtYyx
+        #admin  password: FRwDReZ7zrXEtYyx
+		Simple auth manager | Password for user 'admin': DAGFnyUUCQAFaPN3
 
 6) Run scheduler and webserver
 	airflow scheduler

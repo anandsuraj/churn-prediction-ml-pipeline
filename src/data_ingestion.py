@@ -29,7 +29,7 @@ if not logger.handlers:
     ch.setFormatter(fmt)
     logger.addHandler(fh)
     logger.addHandler(ch)
-    # Route existing logging.* calls to this module logger
+
     logging = logger
 
 # Class: orchestrates ingestion from CSV and Hugging Face API

@@ -12,18 +12,24 @@ Configuration:
     Edit the SCHEDULED_JOBS list below to add/modify scheduled tasks.
 """
 
-from data_validation import DataValidator
-from data_ingestion import DataIngestionPipeline
-from raw_data_storage import RawDataStorage
 import sys
 import os
 import schedule
 import time
 import logging
+import glob
 from datetime import datetime
 
 # Add src directory to path
 sys.path.append('src')
+
+# Import pipeline modules
+from data_validation import DataValidator
+from data_ingestion import DataIngestionPipeline
+from raw_data_storage import RawDataStorage
+from data_preparation import DataPreparationPipeline
+from data_transformation_storage import DataTransformationStorage
+from feature_store import ChurnFeatureStore
 
 # Configure logging
 os.makedirs('logs', exist_ok=True)
@@ -35,7 +41,6 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-# Import pipeline modules
 
 class PipelineScheduler:
     def __init__(self):
@@ -118,10 +123,25 @@ def run_data_validation():
     return validator.run_validation()
 
 def run_data_preparation():
-    """Run data preparation (placeholder)"""
-    logging.info("Data preparation job executed")
-    return {'status': 'success', 'message': 'Data preparation completed'}
+    """Run data preparation pipeline"""
+    preparation = DataPreparationPipeline()
+    return preparation.run_preparation_auto()
 
+def run_data_transformation_storage():
+    """Run data transformation and storage pipeline"""
+    transformer = DataTransformationStorage()
+    return transformer.run_transformation_pipeline_auto()
+
+def run_feature_store():
+    """Run feature store pipeline"""
+    try:
+        feature_store = ChurnFeatureStore()
+        result = feature_store.auto_populate_from_latest_data()
+        feature_store.close()
+        return result
+    except Exception as e:
+        logging.error(f"Feature store job failed: {str(e)}")
+        raise
 
 # SCHEDULED JOBS CONFIGURATION
 # Add your jobs here with their schedule
@@ -149,6 +169,18 @@ SCHEDULED_JOBS = [
         'function': run_data_preparation,
         'type': 'minutes',
         'time': 30  # Every 30 minutes
+    },
+    {
+        'name': 'Data Transformation Storage',
+        'function': run_data_transformation_storage,
+        'type': 'hourly',
+        'time': None
+    },
+    {
+        'name': 'Feature Store',
+        'function': run_feature_store,
+        'type': 'hourly',
+        'time': None
     }
 ]
 
