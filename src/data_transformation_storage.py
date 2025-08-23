@@ -8,29 +8,16 @@ Also tracks feature metadata and training set summaries.
 
 import pandas as pd
 import sqlite3
-import logging
 import os
 import glob
 from datetime import datetime
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import numpy as np
 
-def setup_logging(log_file: str = 'logs/data_transformation_storage.log') -> logging.Logger:
-    """Set up logging to file and console."""
-    os.makedirs(os.path.dirname(log_file), exist_ok=True)
-    logger = logging.getLogger('data_transformation_storage')
-    logger.setLevel(logging.INFO)
-    if not logger.handlers:
-        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-        file_handler = logging.FileHandler(log_file)
-        file_handler.setFormatter(formatter)
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
-        logger.addHandler(console_handler)
-    return logger
+from utils.logger import get_logger, PIPELINE_NAMES
 
-logger = setup_logging()
+# Get logger for this pipeline
+logger = get_logger(PIPELINE_NAMES['DATA_TRANSFORMATION'])
 
 class DataTransformationStorage:
     """Transform features and persist them in SQLite with metadata tracking."""

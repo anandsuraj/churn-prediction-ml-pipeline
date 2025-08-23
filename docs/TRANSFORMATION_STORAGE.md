@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Data Transformation and Storage module transforms cleaned customer data into rich feature sets optimized for machine learning, scales features appropriately, and stores them in a relational database for efficient querying and training set management.
+The Data Transformation and Storage module transforms cleaned customer data into rich feature sets for machine learning, scales features appropriately, and stores them in a SQLite database for easy querying and training set management.
 
 ## Features
 
@@ -20,8 +20,7 @@ The Data Transformation and Storage module transforms cleaned customer data into
 - **Binary Encoding**: For binary features
 
 ### 3. Database Storage
-- **SQLite**: Lightweight local storage
-- **PostgreSQL**: Production-ready database with Docker support
+- **SQLite**: Simple local database storage
 - **Metadata Tracking**: Feature descriptions, transformation methods, data quality metrics
 - **Training Set Management**: Versioned training sets with quality scores
 
@@ -160,53 +159,31 @@ ORDER BY feature_name;
 
 ## Usage Examples
 
-### Basic Usage (SQLite)
+### Basic Usage
 ```python
 from src.data_transformation_storage import DataTransformationStorage
 
-# Initialize with SQLite
-transformer = DataTransformationStorage(
-    db_type="sqlite", 
-    db_path="data/processed/churn_data.db"
-)
+# Initialize transformer
+transformer = DataTransformationStorage()
 
-# Run transformation pipeline
-transformed_df, training_path = transformer.run_transformation_pipeline(input_df)
+# Run transformation pipeline with automatic file detection
+transformed_df, training_path = transformer.run_transformation_pipeline_auto()
 
-# Execute sample queries
-query_results = transformer.execute_sample_queries()
-
-# Generate summary
-summary = transformer.generate_transformation_summary()
+# Get feature summary
+feature_summary = transformer.get_feature_summary()
 
 # Close connection
 transformer.close_connection()
 ```
 
-### PostgreSQL Usage
+### Manual File Processing
 ```python
-# Initialize with PostgreSQL
-pg_config = {
-    'host': 'localhost',
-    'port': 5432,
-    'database': 'churn_prediction',
-    'user': 'churn_user',
-    'password': 'churn_password'
-}
+# Load your own CSV file
+import pandas as pd
+df = pd.read_csv("your_data.csv")
 
-transformer = DataTransformationStorage(
-    db_type="postgresql",
-    pg_config=pg_config
-)
-```
-
-### Docker Setup
-```bash
-# Start the complete pipeline with PostgreSQL
-docker-compose up -d
-
-# The database will be automatically initialized with the schema
-# and the pipeline will connect to it
+# Run transformation pipeline
+transformed_df, training_path = transformer.run_transformation_pipeline(df)
 ```
 
 ## Transformation Logic
@@ -273,24 +250,17 @@ database/
 
 ## Configuration
 
-### Environment Variables
-- `DB_TYPE`: Database type (sqlite/postgresql)
-- `DB_PATH`: SQLite database path
-- `PG_HOST`: PostgreSQL host
-- `PG_PORT`: PostgreSQL port
-- `PG_DATABASE`: PostgreSQL database name
-- `PG_USER`: PostgreSQL username
-- `PG_PASSWORD`: PostgreSQL password
+### Database Path
+- **Default**: `data/processed/churn_data.db`
+- **Custom**: Pass `db_path` parameter when initializing
 
-### Docker Environment
-```yaml
-environment:
-  - DB_TYPE=postgresql
-  - PG_HOST=database
-  - PG_PORT=5432
-  - PG_DATABASE=churn_prediction
-  - PG_USER=churn_user
-  - PG_PASSWORD=churn_password
+### Example
+```python
+# Use default path
+transformer = DataTransformationStorage()
+
+# Use custom path
+transformer = DataTransformationStorage(db_path="my_custom_path.db")
 ```
 
 ## Performance Considerations
@@ -327,18 +297,16 @@ environment:
 ### Common Issues
 
 1. **Database Connection Errors**
-   - Check database credentials
-   - Verify database service is running
-   - Check network connectivity (for PostgreSQL)
+   - Check if the database file path is accessible
+   - Ensure the directory exists
+   - Verify file permissions
 
 2. **Schema Mismatch Errors**
-   - Ensure database/init.sql has been executed
-   - Check table structure matches expected schema
-   - Verify column data types
+   - The database tables are created automatically
+   - If issues persist, delete the database file and restart
 
 3. **Memory Issues**
    - Use batch processing for large datasets
-   - Consider chunked database operations
    - Monitor memory usage during transformations
 
 ### Debug Mode

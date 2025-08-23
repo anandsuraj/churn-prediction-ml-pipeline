@@ -22,8 +22,8 @@ requests>=2.32.3
 # Data Versioning (optional - requires separate installation)
 # dvc>=3.55.2
 
-# Feature Store (optional)
-# feast>=0.40.1
+# Feature Store
+feast>=0.40.1
 
 # Pipeline Orchestration (requires separate setup)
 # apache-airflow>=2.10.2

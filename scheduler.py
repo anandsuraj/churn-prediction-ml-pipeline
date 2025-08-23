@@ -29,6 +29,7 @@ from data_ingestion import DataIngestionPipeline
 from raw_data_storage import RawDataStorage
 from data_preparation import DataPreparationPipeline
 from data_transformation_storage import DataTransformationStorage
+from feature_store import ChurnFeatureStore
 
 # Configure logging
 os.makedirs('logs', exist_ok=True)
@@ -131,6 +132,17 @@ def run_data_transformation_storage():
     transformer = DataTransformationStorage()
     return transformer.run_transformation_pipeline_auto()
 
+def run_feature_store():
+    """Run feature store pipeline"""
+    try:
+        feature_store = ChurnFeatureStore()
+        result = feature_store.auto_populate_from_latest_data()
+        feature_store.close()
+        return result
+    except Exception as e:
+        logging.error(f"Feature store job failed: {str(e)}")
+        raise
+
 # SCHEDULED JOBS CONFIGURATION
 # Add your jobs here with their schedule
 SCHEDULED_JOBS = [
@@ -161,6 +173,12 @@ SCHEDULED_JOBS = [
     {
         'name': 'Data Transformation Storage',
         'function': run_data_transformation_storage,
+        'type': 'hourly',
+        'time': None
+    },
+    {
+        'name': 'Feature Store',
+        'function': run_feature_store,
         'type': 'hourly',
         'time': None
     }
