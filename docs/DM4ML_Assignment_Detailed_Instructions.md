@@ -126,10 +126,11 @@ using an orchestration tool (e.g., Apache Airflow, Prefect, or
 Kubeflow): - Define a Directed Acyclic Graph (DAG) for pipeline tasks. -
 Ensure task dependencies are well-defined (e.g., ingestion → validation
 → preparation). - Monitor pipeline runs and handle failures
-gracefully. - **Deliverables:** - Pipeline DAG/script showcasing task
+gracefully. - 
+
+**Deliverables:** - Pipeline DAG/script showcasing task
 automation - Screenshots of successful pipeline runs in the
 orchestration tool - Logs or monitoring dashboard screenshots
-
 ------------------------------------------------------------------------
 
 ### Additional Instructions
