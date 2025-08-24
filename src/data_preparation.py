@@ -14,13 +14,18 @@ Saves:
 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.preprocessing import StandardScaler
 import os
 import glob
 import warnings
 warnings.filterwarnings('ignore')
+
+# Import matplotlib with Agg backend to avoid GUI issues
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.preprocessing import StandardScaler
 
 from utils.logger import get_logger, PIPELINE_NAMES
 

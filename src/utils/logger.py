@@ -88,5 +88,7 @@ PIPELINE_NAMES = {
     'DATA_PREPARATION': 'data_preparation',
     'DATA_TRANSFORMATION': 'data_transformation_storage',
     'FEATURE_STORE': 'feature_store',
-    'RAW_DATA_STORAGE': 'raw_data_storage'
+    'RAW_DATA_STORAGE': 'raw_data_storage',
+    'DATA_VERSIONING': 'data_versioning',
+    'BUILD_MODEL': 'build_model'
 }

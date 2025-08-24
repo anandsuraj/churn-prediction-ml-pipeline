@@ -1,0 +1,20 @@
+stages:
+  full_pipeline:
+    cmd: python main_pipeline.py
+    deps:
+    - main_pipeline.py
+    - src/data_ingestion.py
+    - src/data_validation.py
+    - src/raw_data_storage.py
+    - src/data_preparation.py
+    - src/data_transformation_storage.py
+    - src/feature_store.py
+    - src/data_versioning.py
+    - src/build_model.py
+    outs:
+    - data/raw/
+    - data/processed/
+    - data/feature_store/
+    - data/eda/
+    - data/models/
+    - reports/

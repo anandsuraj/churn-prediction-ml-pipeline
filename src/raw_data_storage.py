@@ -8,12 +8,16 @@ catalog of stored files for discoverability.
 import os
 import shutil
 from datetime import datetime
-import logging
 from pathlib import Path
 from dotenv import load_dotenv
 
+from utils.logger import get_logger, PIPELINE_NAMES
+
 # Load environment variables from .env file
 load_dotenv()
+
+# Get logger for this pipeline
+logger = get_logger(PIPELINE_NAMES['RAW_DATA_STORAGE'])
 
 try:
     import boto3
@@ -21,22 +25,7 @@ try:
     BOTO3_AVAILABLE = True
 except ImportError:
     BOTO3_AVAILABLE = False
-    logging.warning("boto3 not available. Cloud storage will be disabled.")
-
-# Configure module logger (file + console)
-os.makedirs('logs', exist_ok=True)
-logger = logging.getLogger('raw_data_storage')
-if not logger.handlers:
-    logger.setLevel(logging.INFO)
-    fmt = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    fh = logging.FileHandler('logs/raw_data_storage.log')
-    fh.setFormatter(fmt)
-    ch = logging.StreamHandler()
-    ch.setFormatter(fmt)
-    logger.addHandler(fh)
-    logger.addHandler(ch)
-
-    logging = logger
+    logger.warning("boto3 not available. Cloud storage will be disabled.")
 
 # Class: manages raw file layout locally and in S3
 class RawDataStorage:
@@ -53,7 +42,7 @@ class RawDataStorage:
             self._init_s3_client()
 
         self.base_path.mkdir(parents=True, exist_ok=True)
-        logging.info(f"Storage initialized: type={self.storage_type}, base_path={self.base_path}")
+        logger.info(f"Storage initialized: type={self.storage_type}, base_path={self.base_path}")
 
     # Initialize S3 client and ensure bucket exists (if permissions allow)
     def _init_s3_client(self):
@@ -82,14 +71,14 @@ class RawDataStorage:
                         Bucket=self.bucket_name,
                         CreateBucketConfiguration={'LocationConstraint': aws_region}
                     )
-                    logging.info(f"Created S3 bucket: {self.bucket_name}")
+                    logger.info(f"Created S3 bucket: {self.bucket_name}")
                 else:
                     raise
             
-            logging.info(f"S3 connected to bucket: {self.bucket_name}")
+            logger.info(f"S3 connected to bucket: {self.bucket_name}")
         
         except Exception as e:
-            logging.error(f"S3 initialization failed: {str(e)}")
+            logger.error(f"S3 initialization failed: {str(e)}")
             self.s3_client = None
 
     # Copy file into partitioned layout and optionally upload to S3
@@ -110,7 +99,7 @@ class RawDataStorage:
 
         # Copy to local
         shutil.copy2(source_path, destination_path)
-        logging.info(f"File stored locally: {destination_path}")
+        logger.info(f"File stored locally: {destination_path}")
 
         # Upload to cloud if enabled
         s3_url = None
@@ -121,9 +110,9 @@ class RawDataStorage:
             try:
                 self.s3_client.upload_file(str(destination_path), self.bucket_name, s3_key)
                 s3_url = f"s3://{self.bucket_name}/{s3_key}"
-                logging.info(f"Uploaded to S3: {s3_url}")
+                logger.info(f"Uploaded to S3: {s3_url}")
             except Exception as e:
-                logging.error(f"S3 upload failed: {str(e)}")
+                logger.error(f"S3 upload failed: {str(e)}")
 
         return {"local_path": str(destination_path), "s3_url": s3_url}
 
@@ -140,7 +129,7 @@ class RawDataStorage:
                     data_type='churn'
                 )
                 results.append(result)
-                logging.info(f"Stored CSV file from ingestion: {result['local_path']}")
+                logger.info(f"Stored CSV file from ingestion: {result['local_path']}")
 
             # Store Hugging Face JSON file
             if 'huggingface_file' in ingestion_result and ingestion_result['huggingface_file']:
@@ -150,12 +139,12 @@ class RawDataStorage:
                     data_type='churn'
                 )
                 results.append(result)
-                logging.info(f"Stored Hugging Face file from ingestion: {result['local_path']}")
+                logger.info(f"Stored Hugging Face file from ingestion: {result['local_path']}")
 
             return results
 
         except Exception as e:
-            logging.error(f"Failed to store ingested files: {str(e)}")
+            logger.error(f"Failed to store ingested files: {str(e)}")
             raise
 
     # Walk storage and emit a JSON catalog of files
@@ -181,7 +170,7 @@ class RawDataStorage:
         with open(catalog_path, 'w') as f:
             json.dump(catalog, f, indent=2)
 
-        logging.info(f"Data catalog created: {catalog_path}")
+        logger.info(f"Data catalog created: {catalog_path}")
         return str(catalog_path)
 
 if __name__ == "__main__":

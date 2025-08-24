@@ -1,11 +1,1 @@
-# Ignore log files
-*.log
-logs/
-
-# Ignore temporary files
-*.tmp
-*.temp
-
-# Ignore system files
-.DS_Store
-Thumbs.db
+config/dvc/.dvcignore

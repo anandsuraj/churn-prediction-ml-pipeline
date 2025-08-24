@@ -9,11 +9,102 @@ services:
       - .env
     environment:
       - STORAGE_TYPE=${STORAGE_TYPE:-local}
-      - AWS_REGION=${AWS_REGION:-ap-south-1}
+      - AWS_REGION=${AWS_REGION:-us-east-1}
       - S3_BUCKET_NAME=${S3_BUCKET_NAME:-churn-data-lake}
       - DB_PATH=${DB_PATH:-data/processed/churn_data.db}
+      - PYTHONPATH=/app
     volumes:
       - ./data:/app/data
       - ./logs:/app/logs
       - ./reports:/app/reports
+      - ./config:/app/config
+      - ./.dvc:/app/.dvc
+    ports:
+      - "8000:8000"  # For future API endpoints
     command: ["python", "main_pipeline.py"]
+    
+  # DVC setup service (runs once to initialize)
+  dvc-setup:
+    build: .
+    image: churn-prediction-pipeline:latest
+    container_name: churn-dvc-setup
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+      - ./.dvc:/app/.dvc
+    command: ["bash", "scripts/setup_dvc.sh"]
+    profiles:
+      - setup
+
+  # Airflow Services
+  airflow-init:
+    build: .
+    image: churn-prediction-pipeline:latest
+    container_name: churn-airflow-init
+    env_file:
+      - .env
+    environment:
+      - AIRFLOW_HOME=/app/airflow
+      - PYTHONPATH=/app
+      - DOCKER_CONTAINER=true
+    volumes:
+      - ./airflow:/app/airflow
+      - ./src:/app/src
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./reports:/app/reports
+      - ./config:/app/config
+      - ./.dvc:/app/.dvc
+    command: ["python", "/app/airflow/setup_airflow.py"]
+    profiles:
+      - airflow
+
+  airflow-webserver:
+    build: .
+    image: churn-prediction-pipeline:latest
+    container_name: churn-airflow-webserver
+    env_file:
+      - .env
+    environment:
+      - AIRFLOW_HOME=/app/airflow
+      - PYTHONPATH=/app
+    volumes:
+      - ./airflow:/app/airflow
+      - ./src:/app/src
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./reports:/app/reports
+      - ./config:/app/config
+      - ./.dvc:/app/.dvc
+    ports:
+      - "8080:8080"
+    command: ["airflow", "webserver", "--port", "8080"]
+    depends_on:
+      - airflow-init
+    profiles:
+      - airflow
+
+  airflow-scheduler:
+    build: .
+    image: churn-prediction-pipeline:latest
+    container_name: churn-airflow-scheduler
+    env_file:
+      - .env
+    environment:
+      - AIRFLOW_HOME=/app/airflow
+      - PYTHONPATH=/app
+    volumes:
+      - ./airflow:/app/airflow
+      - ./src:/app/src
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./reports:/app/reports
+      - ./config:/app/config
+      - ./.dvc:/app/.dvc
+    command: ["airflow", "scheduler"]
+    depends_on:
+      - airflow-init
+    profiles:
+      - airflow

@@ -1,8 +1,7 @@
 """
 Simple Feature Store for Churn Prediction
 ========================================
-A lightweight feature store implementation that works with CSV data
-without requiring external dependencies like Feast.
+A lightweight feature store implementation that works with CSV data.
 """
 
 import pandas as pd
@@ -10,19 +9,11 @@ import os
 import glob
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-import logging
 
-# Configure logging
-os.makedirs('logs', exist_ok=True)
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s',
-    handlers=[
-        logging.FileHandler('logs/feature_store.log'),
-        logging.StreamHandler()
-    ]
-)
-logger = logging.getLogger('feature_store')
+from utils.logger import get_logger, PIPELINE_NAMES
+
+# Get logger for this pipeline
+logger = get_logger(PIPELINE_NAMES['FEATURE_STORE'])
 
 class SimpleChurnFeatureStore:
     """Simple feature store for managing churn prediction features."""

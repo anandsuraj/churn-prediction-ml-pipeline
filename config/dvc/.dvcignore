@@ -1,0 +1,24 @@
+# Ignore log files
+*.log
+logs/
+
+# Ignore temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore reports (except latest)
+reports/data_quality_report_*.xlsx
+!reports/latest_*
+
+# Ignore model artifacts (tracked separately)
+*.pkl
+*.joblib
+*.h5
+*.onnx

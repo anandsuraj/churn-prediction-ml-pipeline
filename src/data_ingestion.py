@@ -5,32 +5,21 @@ Fetches raw churn data from two sources:
   1) Telco CSV (public GitHub)
   2) Hugging Face dataset API (JSON)
 
-Adds basic logging, retry with backoff for the API, and returns file paths
+Adds basic logger, retry with backoff for the API, and returns file paths
 for downstream stages (storage, validation, preparation).
 """
 import pandas as pd
 import requests
 import os
-import logging
 from datetime import datetime
 import json
 import glob
 import time
 
-# Configure module logger (file + console)
-os.makedirs('logs', exist_ok=True)
-logger = logging.getLogger('data_ingestion')
-if not logger.handlers:
-    logger.setLevel(logging.INFO)
-    fmt = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    fh = logging.FileHandler('logs/data_ingestion.log')
-    fh.setFormatter(fmt)
-    ch = logging.StreamHandler()
-    ch.setFormatter(fmt)
-    logger.addHandler(fh)
-    logger.addHandler(ch)
+from utils.logger import get_logger, PIPELINE_NAMES
 
-    logging = logger
+# Get logger for this pipeline
+logger = get_logger(PIPELINE_NAMES['DATA_INGESTION'])
 
 # Class: orchestrates ingestion from CSV and Hugging Face API
 class DataIngestionPipeline:
@@ -44,7 +33,7 @@ class DataIngestionPipeline:
     def ingest_csv_data(self):
         """Ingest customer churn data from CSV source"""
         try:
-            logging.info("Starting CSV data ingestion...")
+            logger.info("Starting CSV data ingestion...")
             
             # IBM Telco Customer Churn dataset
             url = "https://raw.githubusercontent.com/IBM/telco-customer-churn-on-icp4d/master/data/Telco-Customer-Churn.csv"
@@ -60,22 +49,22 @@ class DataIngestionPipeline:
                 
                 # Validate data
                 df = pd.read_csv(filepath)
-                logging.info(f"CSV data successfully ingested: {filepath}")
-                logging.info(f"Records: {len(df)}, Columns: {len(df.columns)}")
+                logger.info(f"CSV data successfully ingested: {filepath}")
+                logger.info(f"Records: {len(df)}, Columns: {len(df.columns)}")
                 
                 return filepath
             else:
                 raise Exception(f"Failed to fetch CSV data: HTTP {response.status_code}")
                 
         except Exception as e:
-            logging.error(f"CSV ingestion failed: {str(e)}")
+            logger.error(f"CSV ingestion failed: {str(e)}")
             raise
 
     # Fetch JSON rows from Hugging Face dataset server (with retry)
     def ingest_huggingface_data(self):
         """Ingest customer data from Hugging Face API"""
         try:
-            logging.info("Starting Hugging Face data ingestion...")
+            logger.info("Starting Hugging Face data ingestion...")
             
             # Hugging Face Datasets API endpoint
             api_url = "https://datasets-server.huggingface.co/rows"
@@ -96,9 +85,9 @@ class DataIngestionPipeline:
                     last_status = response.status_code
                     if response.status_code == 200:
                         break
-                    logging.warning(f"HF API HTTP {response.status_code} (attempt {attempt}/{max_retries})")
+                    logger.warning(f"HF API HTTP {response.status_code} (attempt {attempt}/{max_retries})")
                 except Exception as e:
-                    logging.warning(f"HF API request failed (attempt {attempt}/{max_retries}): {e}")
+                    logger.warning(f"HF API request failed (attempt {attempt}/{max_retries}): {e}")
                 if attempt < max_retries:
                     time.sleep(backoff ** attempt)
 
@@ -114,21 +103,21 @@ class DataIngestionPipeline:
                 
                 records_count = len(api_data.get('rows', []))
                 
-                logging.info(f"Hugging Face data successfully ingested: {filepath}")
-                logging.info(f"Records: {records_count}")
+                logger.info(f"Hugging Face data successfully ingested: {filepath}")
+                logger.info(f"Records: {records_count}")
                 
                 return filepath
             else:
                 raise Exception(f"Failed to fetch Hugging Face data: HTTP {last_status}")
             
         except Exception as e:
-            logging.error(f"Hugging Face ingestion failed: {str(e)}")
+            logger.error(f"Hugging Face ingestion failed: {str(e)}")
             # Fallback to latest cached HF file if available
             try:
                 hf_files = glob.glob(os.path.join(self.raw_data_path, "huggingface_churn_*.json"))
                 if hf_files:
                     latest_hf = max(hf_files, key=os.path.getctime)
-                    logging.warning(f"Using cached Hugging Face file: {latest_hf}")
+                    logger.warning(f"Using cached Hugging Face file: {latest_hf}")
                     return latest_hf
             except Exception:
                 pass
@@ -138,18 +127,18 @@ class DataIngestionPipeline:
     def run_ingestion(self):
         """Run complete data ingestion from both sources"""
         try:
-            logging.info("Starting data ingestion pipeline...")
+            logger.info("Starting data ingestion pipeline...")
             
             # Ingest from both sources
             csv_file = self.ingest_csv_data()
             hf_file = self.ingest_huggingface_data()
             
-            logging.info("Data ingestion completed successfully")
-            logging.info(f"CSV file: {csv_file}")
+            logger.info("Data ingestion completed successfully")
+            logger.info(f"CSV file: {csv_file}")
             if hf_file:
-                logging.info(f"Hugging Face file: {hf_file}")
+                logger.info(f"Hugging Face file: {hf_file}")
             else:
-                logging.warning("Hugging Face file not available; proceeding with CSV only")
+                logger.warning("Hugging Face file not available; proceeding with CSV only")
             
             return {
                 'status': 'success',
@@ -159,7 +148,7 @@ class DataIngestionPipeline:
             }
             
         except Exception as e:
-            logging.error(f"Data ingestion pipeline failed: {str(e)}")
+            logger.error(f"Data ingestion pipeline failed: {str(e)}")
             raise
 
 if __name__ == "__main__":

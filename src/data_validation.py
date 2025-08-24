@@ -11,24 +11,13 @@ the report is created for the available source.
 """
 import pandas as pd
 import os
-import logging
 from datetime import datetime
 import glob
 
-# Configure module logger (file + console)
-os.makedirs('logs', exist_ok=True)
-logger = logging.getLogger('data_validation')
-if not logger.handlers:
-    logger.setLevel(logging.INFO)
-    fmt = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    fh = logging.FileHandler('logs/data_validation.log')
-    fh.setFormatter(fmt)
-    ch = logging.StreamHandler()
-    ch.setFormatter(fmt)
-    logger.addHandler(fh)
-    logger.addHandler(ch)
+from utils.logger import get_logger, PIPELINE_NAMES
 
-    logging = logger
+# Get logger for this pipeline
+logger = get_logger(PIPELINE_NAMES['DATA_VALIDATION'])
 
 # Class: validates raw CSV/JSON data and emits an Excel quality report
 class DataValidator:
@@ -41,7 +30,7 @@ class DataValidator:
     def validate_csv_data(self, csv_file):
         """Validate CSV data file"""
         try:
-            logging.info(f"Validating CSV file: {csv_file}")
+            logger.info(f"Validating CSV file: {csv_file}")
             
             df = pd.read_csv(csv_file)
             
@@ -75,18 +64,18 @@ class DataValidator:
                 if negative_count > 0:
                     validation_results['negative_values'][column] = int(negative_count)
             
-            logging.info(f"CSV validation completed: {len(df)} records, {len(df.columns)} columns")
+            logger.info(f"CSV validation completed: {len(df)} records, {len(df.columns)} columns")
             return validation_results
             
         except Exception as e:
-            logging.error(f"CSV validation failed: {str(e)}")
+            logger.error(f"CSV validation failed: {str(e)}")
             raise
 
     # Validate a JSON file (HF rows format supported)
     def validate_json_data(self, json_file):
         """Validate JSON data file"""
         try:
-            logging.info(f"Validating JSON file: {json_file}")
+            logger.info(f"Validating JSON file: {json_file}")
             
             import json
             with open(json_file, 'r') as f:
@@ -129,18 +118,18 @@ class DataValidator:
                 if negative_count > 0:
                     validation_results['negative_values'][column] = int(negative_count)
             
-            logging.info(f"JSON validation completed: {len(df)} records, {len(df.columns)} columns")
+            logger.info(f"JSON validation completed: {len(df)} records, {len(df.columns)} columns")
             return validation_results
             
         except Exception as e:
-            logging.error(f"JSON validation failed: {str(e)}")
+            logger.error(f"JSON validation failed: {str(e)}")
             raise
 
     # Run validation on latest available CSV/JSON under raw path
     def run_validation(self):
         """Run validation on all data files"""
         try:
-            logging.info("Starting data validation pipeline...")
+            logger.info("Starting data validation pipeline...")
             
             # Find latest data files
             csv_files = glob.glob(os.path.join(self.raw_data_path, "customer_churn_*.csv"))
@@ -160,7 +149,7 @@ class DataValidator:
             # Generate report
             report_path = self.generate_validation_report(csv_results, json_results)
             
-            logging.info("Data validation completed successfully")
+            logger.info("Data validation completed successfully")
             return {
                 'status': 'success',
                 'csv_results': csv_results,
@@ -170,7 +159,7 @@ class DataValidator:
             }
             
         except Exception as e:
-            logging.error(f"Data validation pipeline failed: {str(e)}")
+            logger.error(f"Data validation pipeline failed: {str(e)}")
             raise
 
     # Create an Excel report summarizing validation metrics
@@ -243,11 +232,11 @@ class DataValidator:
                     negative_df = pd.DataFrame(negative_data)
                     negative_df.to_excel(writer, sheet_name='Negative Values', index=False)
             
-            logging.info(f"Validation report generated: {report_path}")
+            logger.info(f"Validation report generated: {report_path}")
             return report_path
             
         except Exception as e:
-            logging.error(f"Report generation failed: {str(e)}")
+            logger.error(f"Report generation failed: {str(e)}")
             raise
 
 if __name__ == "__main__":

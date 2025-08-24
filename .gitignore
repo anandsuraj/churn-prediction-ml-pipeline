@@ -14,6 +14,12 @@
 .dvc/plots/
 .dvc/.gitignore
 
+# Configuration - Keep organized structure
+!config/dvc/dvc.yaml
+!config/dvc/dvc.lock
+!config/dvc/.dvcignore
+!config/env/.env.example
+
 # Reports (keep only latest)
 reports/data_quality_report_*.xlsx
 reports/*.json

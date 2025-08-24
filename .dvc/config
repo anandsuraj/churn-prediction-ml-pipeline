@@ -2,3 +2,7 @@
     type = copy
 [core]
     analytics = false
+    remote = s3remote
+['remote "s3remote"']
+    url = s3://churn-data-lake/dvc-storage
+    region = ap-south-1

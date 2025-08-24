@@ -23,6 +23,24 @@ ssh -i "airflow-key-pair.pem" ubuntu@ec2-54-86-92-182.compute-1.amazonaws.com
         #admin  password: FRwDReZ7zrXEtYyx
 		Simple auth manager | Password for user 'admin': DAGFnyUUCQAFaPN3
 
+
+	airflow webserver create-user \
+	--username admin \
+	--firstname Suraj \
+	--lastname Anand \
+	--role Admin \
+	--email surajanand.work@gmail.com \
+	--password mysecurepassword
+
+		airflow users create \
+    --username admin \
+    --firstname Suraj \
+    --lastname Anand \
+    --role Admin \
+    --email surajanand.work@gmail.com \
+    --password mysecurepassword
+
+
 6) Run scheduler and webserver
 	airflow scheduler
 	airflow webserver --port 8080
