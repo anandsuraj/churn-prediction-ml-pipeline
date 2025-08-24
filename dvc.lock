@@ -1,0 +1,41 @@
+schema: '2.0'
+stages:
+  full_pipeline:
+    cmd: python main_pipeline.py
+    deps:
+    - path: src/data_ingestion.py
+      hash: md5
+      md5: c4967c98b2b1ca808dc317927cd010cc
+      size: 6607
+    - path: src/data_preparation.py
+      hash: md5
+      md5: 7bd8f67f60e242483a93bc5bc39645e6
+      size: 8777
+    - path: src/data_transformation_storage.py
+      hash: md5
+      md5: 78b85720443cbac6559b2e6914cd78fe
+      size: 12745
+    - path: src/data_versioning.py
+      hash: md5
+      md5: c651830ca78d8f49586932eb1c271534
+      size: 11925
+    - path: src/feature_store.py
+      hash: md5
+      md5: 13ecbf28ca6df264cb9195e2277182d0
+      size: 14773
+    outs:
+    - path: data/feature_store/
+      hash: md5
+      md5: 3901ff65733ccd1a6cf52daa3183ee4b.dir
+      size: 2483691
+      nfiles: 2
+    - path: data/processed/
+      hash: md5
+      md5: 2db0a678c7820d77058c6b925cae15ad.dir
+      size: 7901091
+      nfiles: 4
+    - path: data/raw/
+      hash: md5
+      md5: 3abd859e39045c413cac9a1c7e08eb95.dir
+      size: 1050697
+      nfiles: 3

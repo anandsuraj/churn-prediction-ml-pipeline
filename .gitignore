@@ -1,4 +1,4 @@
-# DVC
+# DVC - Data directories (tracked by DVC)
 /data/raw/*
 /data/cleaned/*
 /data/processed/*
@@ -6,6 +6,18 @@
 /data/models/*
 !*.dvc
 !.gitkeep
+
+# DVC - Sensitive configuration and cache
+.dvc/config.local
+.dvc/cache/
+.dvc/tmp/
+.dvc/plots/
+.dvc/.gitignore
+
+# Reports (keep only latest)
+reports/data_quality_report_*.xlsx
+reports/*.json
+!reports/latest_*
 
 # Python
 __pycache__/
@@ -41,12 +53,40 @@ ENV/
 *.swp
 *.swo
 
-# Logs
+# Logs and temporary files
 logs/*.log
 *.log
+*.tmp
+*.temp
+*.bak
+*.backup
+*.swp
+*.swo
+*~
 
-# Environment variables
+# Data processing temporary files
+temp/
+tmp/
+.tmp/
+processing/
+scratch/
+
+# Environment variables and credentials
 .env
+.env.local
+.env.production
+.env.staging
+*.pem
+*.key
+credentials.json
+config.json
+secrets.yaml
+secrets.yml
+
+# AWS credentials
+.aws/
+aws-credentials.txt
+credentials.txt
 
 # OS
 .DS_Store
@@ -55,5 +95,48 @@ Thumbs.db
 # Jupyter
 .ipynb_checkpoints/
 
-# MLflow
+# ML and Data Science
 mlruns/
+.mlflow/
+wandb/
+tensorboard_logs/
+checkpoints/
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+*.model
+*.weights
+
+# Data files (large files should be in DVC)
+*.csv
+*.json
+*.parquet
+*.feather
+*.xlsx
+*.xls
+!sample_*.csv
+!test_*.csv
+!*_sample.csv
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Compressed files
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# System and cache files
+.cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
