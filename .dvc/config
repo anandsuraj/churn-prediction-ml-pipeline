@@ -1,0 +1,4 @@
+[cache]
+    type = copy
+[core]
+    analytics = false
