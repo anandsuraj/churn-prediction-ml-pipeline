@@ -48,8 +48,11 @@ churn-prediction-pipeline/
 │   ├── build_model.py
 │   └── utils/
 ├── data/                          # DVC-tracked data storage
-│   ├── raw/         cleaned/      processed/
-│   ├── feature_store/             eda/
+│   ├── raw/         
+│   ├── cleaned/
+│   ├── processed/
+│   ├── feature_store/ 
+│   ├── eda/
 │   └── models/
 ├── database/                      # SQLite schema
 ├── docs/                          # Documentation
