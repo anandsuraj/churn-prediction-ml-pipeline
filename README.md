@@ -4,7 +4,7 @@ A comprehensive data management pipeline for customer churn prediction, implemen
 
 ## Project Overview
 
-This project implements a complete end-to-end machine learning pipeline for predicting customer churn in telecommunications. The pipeline automates the entire ML workflow including data collection, validation, feature engineering, model training, and deployment with comprehensive logging and versioning.
+This project implements a complete end-to-end ML pipeline for predicting customer churn in telecommunications, automating data collection, validation, feature engineering, model training, and deployment with comprehensive logging and versioning.
 
 ## Dataset
 
@@ -13,397 +13,143 @@ This project implements a complete end-to-end machine learning pipeline for pred
 - **Size**: 7,043 customers with 21 features
 - **Target**: Binary churn classification (Yes/No)
 
-### Dataset Features:
+### Features:
 - **Demographics**: gender, SeniorCitizen, Partner, Dependents
 - **Services**: PhoneService, MultipleLines, InternetService, OnlineSecurity, OnlineBackup, DeviceProtection, TechSupport, StreamingTV, StreamingMovies
 - **Account**: Contract, PaperlessBilling, PaymentMethod
 - **Financial**: MonthlyCharges, TotalCharges
 - **Behavioral**: tenure (months with company)
-- **Target**: Churn (Yes/No)
 
-## Complete Pipeline Architecture
+## Pipeline Architecture
 
-### Pipeline Steps (main_pipeline.py):
-
-1. **Step 1: Problem Formulation** - Business problem definition and objectives
-2. **Step 2: Data Ingestion** - Fetch data from multiple sources (CSV + Hugging Face API)
-3. **Step 3: Raw Data Storage** - Organize and catalog raw data
-4. **Step 4: Data Validation** - Validate data quality and integrity
-5. **Step 5: Data Preparation** - Clean and preprocess data
-6. **Step 6: Data Transformation** - Feature engineering and storage
-7. **Step 7: Feature Store** - Manage engineered features
-8. **Step 8: Data Versioning** - DVC-based version control for datasets
-9. **Step 9: Model Training** - Train and evaluate ML models
+1. **Problem Formulation** - Business problem definition and objectives
+2. **Data Ingestion** - Fetch data from CSV + Hugging Face API
+3. **Raw Data Storage** - Organize and catalog raw data
+4. **Data Validation** - Validate data quality and integrity
+5. **Data Preparation** - Clean and preprocess data
+6. **Data Transformation** - Feature engineering and storage
+7. **Feature Store** - Manage engineered features
+8. **Data Versioning** - DVC-based version control
+9. **Model Training** - Train and evaluate ML models
 
 ## Project Structure
 
 ```
 churn-prediction-pipeline/
-├── config/                        # Configuration files
-│   ├── dvc/                       # DVC configuration
-│   │   ├── dvc.yaml               # Pipeline definition
-│   │   ├── dvc.lock               # Pipeline lock file
-│   │   └── .dvcignore             # DVC ignore patterns
-│   ├── env/                       # Environment configuration
-│   │   └── .env.example           # Environment template
-│   └── README.md                  # Configuration guide
+├── config/                        # DVC and environment configuration
 ├── scripts/                       # Setup and utility scripts
-│   ├── setup_project.sh           # Complete project setup
-│   ├── setup_dvc.sh               # DVC setup script
-│   └── setup_dvc_credentials.sh   # DVC credentials setup
 ├── src/                           # Source code
-│   ├── data_ingestion.py          # Step 2: Data ingestion
-│   ├── data_validation.py         # Step 4: Data validation
-│   ├── data_preparation.py        # Step 5: Data preparation
-│   ├── data_transformation_storage.py # Step 6: Data transformation
-│   ├── feature_store.py           # Step 7: Feature store
-│   ├── data_versioning.py         # Step 8: Data versioning
-│   ├── build_model.py             # Step 9: Model training
-│   └── utils/                     # Utility functions
-├── data/                          # Data storage (DVC tracked)
-│   ├── raw/                       # Raw ingested data
-│   ├── cleaned/                   # Cleaned data
-│   ├── processed/                 # Transformed data
-│   │   └── training_sets/         # ML-ready datasets
-│   ├── feature_store/             # Feature store
-│   ├── eda/                       # Exploratory data analysis
-│   │   ├── raw/                   # Raw data EDA
-│   │   └── cleaned/               # Cleaned data EDA
-│   └── models/                    # Trained models
-├── database/                      # Database setup
-│   └── init.sql                   # SQLite schema
+│   ├── data_ingestion.py
+│   ├── data_validation.py
+│   ├── data_preparation.py
+│   ├── data_transformation_storage.py
+│   ├── feature_store.py
+│   ├── data_versioning.py
+│   ├── build_model.py
+│   └── utils/
+├── data/                          # DVC-tracked data storage
+│   ├── raw/         cleaned/      processed/
+│   ├── feature_store/             eda/
+│   └── models/
+├── database/                      # SQLite schema
 ├── docs/                          # Documentation
-│   ├── DVC_Data_Versioning_Guide.md # DVC guide
-│   └── DM4ML_Assignment_Detailed_Instructions.md
 ├── logs/                          # Pipeline logs
 ├── reports/                       # Generated reports
-├── Dockerfile                     # Docker configuration
-├── docker-compose.yml             # Docker services
-├── requirements.txt               # Python dependencies
-├── main_pipeline.py               # Main pipeline runner
-├── problem_formulation.md         # Business problem definition
-├── dvc.yaml -> config/dvc/dvc.yaml    # Symbolic link
-├── dvc.lock -> config/dvc/dvc.lock    # Symbolic link
-├── .dvcignore -> config/dvc/.dvcignore # Symbolic link
-├── .env.example -> config/env/.env.example # Symbolic link
-└── README.md                      # This file
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+└── main_pipeline.py
 ```
 
 ## Quick Start
 
-### Prerequisites
-- Python 3.8+
-- Git
-- Docker (optional)
-
-### Installation
-
-#### Option 1: Automated Setup (Recommended)
+### Option 1: Automated Setup (Recommended)
 ```bash
 git clone <repository-url>
 cd churn-prediction-pipeline
-
-# Run complete setup script
 bash scripts/setup_project.sh
-
-# Edit environment variables
 nano .env
-
-# Run pipeline
 python main_pipeline.py
 ```
 
-#### Option 2: Manual Setup
+### Option 2: Manual Setup
 ```bash
-git clone <repository-url>
-cd churn-prediction-pipeline
-
-# Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
+python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
-
-# Configure environment variables
-cp config/env/.env.example .env
-nano .env  # Edit with your credentials
-
-# Set up DVC
+cp config/env/.env.example .env && nano .env
 bash scripts/setup_dvc.sh
-
-# Run pipeline
 python main_pipeline.py
 ```
 
-#### Option 3: Docker Setup
+### Option 3: Docker
 ```bash
-git clone <repository-url>
-cd churn-prediction-pipeline
-
-# Set up environment
-cp config/env/.env.example .env
-nano .env  # Edit with your credentials
-
-# Run with Docker Compose
-docker-compose up
-
-# Or run setup first
-docker-compose --profile setup up dvc-setup
-docker-compose up pipeline
+cp config/env/.env.example .env && nano .env
+docker-compose up -d
 ```
 
 ## Pipeline Components
 
-### 1. Data Ingestion (`src/data_ingestion.py`)
-- **Purpose**: Fetch data from multiple sources
-- **Features**: CSV loading, Hugging Face API integration
-- **Output**: Raw data in `data/raw/`
-- **Logs**: `logs/data_ingestion.log`
+| Step | Script | Output |
+|------|--------|--------|
+| Data Ingestion | `src/data_ingestion.py` | `data/raw/` |
+| Data Validation | `src/data_validation.py` | `reports/validation_reports/` |
+| Data Preparation | `src/data_preparation.py` | `data/cleaned/` |
+| Data Transformation | `src/data_transformation_storage.py` | `data/processed/training_sets/` |
+| Feature Store | `src/feature_store.py` | `data/feature_store/` |
+| Data Versioning | `src/data_versioning.py` | DVC `.dvc` files |
+| Model Training | `src/build_model.py` | `src/models/` |
 
-### 2. Raw Data Storage (`src/raw_data_storage.py`)
-- **Purpose**: Organize and catalog raw data
-- **Features**: Directory structure, data catalog
-- **Output**: Organized data hierarchy
-- **Logs**: `logs/raw_data_storage.log`
-
-### 3. Data Validation (`src/data_validation.py`)
-- **Purpose**: Validate data quality and integrity
-- **Features**: Schema validation, quality checks, statistical analysis
-- **Output**: Validation reports in `reports/validation_reports/`
-- **Logs**: `logs/data_validation.log`
-
-### 4. Data Preparation (`src/data_preparation.py`)
-- **Purpose**: Clean and preprocess raw data
-- **Features**: Missing value handling, categorical encoding, data type conversion
-- **Output**: Cleaned data in `data/cleaned/churn_data_cleaned.csv`
-- **Logs**: `logs/data_preparation.log`
-
-### 5. Data Transformation (`src/data_transformation_storage.py`)
-- **Purpose**: Engineer features and store in database
-- **Features**: Feature engineering, scaling, SQLite storage
-- **Output**: Transformed features in `data/processed/training_sets/`
-- **Logs**: `logs/data_transformation_storage.log`
-
-### 6. Feature Store (`src/feature_store.py`)
-- **Purpose**: Manage engineered features
-- **Features**: Feature retrieval API, metadata tracking
-- **Output**: Feature store in `data/feature_store/`
-- **Logs**: `logs/feature_store.log`
-
-### 7. Data Versioning (`src/data_versioning.py`)
-- **Purpose**: DVC-based version control for datasets
-- **Features**: Git-like versioning, reproducibility, collaboration
-- **Output**: DVC-tracked data with `.dvc` files
-- **Logs**: `logs/data_versioning.log`
-
-#### DVC Data Versioning Features:
-- **Automatic Versioning**: Each pipeline step creates a version
-- **Git Integration**: Versions tracked in Git with tags
-- **Reproducibility**: Exact data states can be recreated
-- **Remote Storage**: Optional cloud storage integration
-- **Collaboration**: Team can work with consistent data versions
-
-### 8. Model Training (`src/build_model.py`)
-- **Purpose**: Train and evaluate ML models
-- **Features**: Multiple algorithms, hyperparameter tuning, model evaluation
-- **Output**: Trained models in `src/models/`
-- **Logs**: `logs/build_model.log`
+### DVC Data Versioning Features:
+- Git-like versioning with automatic version creation per pipeline step
+- Reproducibility — exact data states can be recreated
+- Optional remote/cloud storage integration
 
 ## Expected Performance
 
-### Model Performance Targets:
-- **Accuracy**: > 85%
-- **Precision**: > 80%
-- **Recall**: > 75%
-- **F1-Score**: > 0.8
-- **AUC-ROC**: > 0.85
+| Metric | Target |
+|--------|--------|
+| Accuracy | > 85% |
+| Precision | > 80% |
+| Recall | > 75% |
+| F1-Score | > 0.80 |
+| AUC-ROC | > 0.85 |
 
-### Business Impact:
-- **Churn Reduction**: 5% decrease in quarterly churn rate
-- **Cost Savings**: Reduced customer acquisition costs
-- **Revenue Protection**: Maintained customer lifetime value
-
-## Usage Examples
-
-### Run Individual Steps:
-```bash
-# Data ingestion
-python src/data_ingestion.py
-
-# Data validation
-python src/data_validation.py
-
-# Data preparation
-python src/data_preparation.py
-
-# Data transformation
-python src/data_transformation_storage.py
-
-# Feature store
-python src/feature_store.py
-
-# Model training
-python src/build_model.py
-```
-
-### Run Complete Pipeline:
-```bash
-python main_pipeline.py
-```
-
-## Monitoring and Logging
-
-### Log Files:
-- All pipeline steps generate detailed logs in `logs/`
-- Each log file contains timestamps, error handling, and progress tracking
-- Logs are automatically rotated and maintained
-
-### Reports:
-- Validation reports: `reports/validation_reports/`
-- Model performance: `reports/model_performance/`
-- Data quality: `reports/data_quality/`
-
-### Version Tracking:
-- Data versions: `data/versions/version_metadata.json`
-- Version reports: `data/versions/version_report.md`
-
-## Docker Support
-
-### Build and Run:
-```bash
-# Build Docker image (includes DVC setup)
-docker build -t churn-prediction-pipeline .
-
-# Run pipeline with DVC versioning
-docker run -v $(pwd)/data:/app/data churn-prediction-pipeline
-
-# Run with Docker Compose
-docker-compose up -d
-```
-
-### Docker Services:
-- Application container with all dependencies
-- DVC data versioning automatically configured
-- SQLite database (can be upgraded to PostgreSQL)
-- Volume mounts for data persistence
+**Business Impact**: 5% quarterly churn reduction, reduced acquisition costs, maintained customer lifetime value.
 
 ## Configuration
 
-### Environment Variables:
 ```bash
 export PYTHONPATH=$PYTHONPATH:$(pwd)
 export LOG_LEVEL=INFO
 export AWS_ACCESS_KEY_ID=your-access-key
 export AWS_SECRET_ACCESS_KEY=your-secret-key
-export AWS_REGION=your-region
 export S3_BUCKET_NAME=your-bucket-name
 ```
 
-### Database Configuration:
-- **Default**: SQLite for local development
-- **Production**: PostgreSQL/MySQL recommended
-
-### Feature Store Configuration:
-- CSV-based storage for simplicity
-- Extensible to Redis/PostgreSQL for production
-
-## Testing
-
-### Run Tests:
-```bash
-# Test individual components
-python -c "from src.data_ingestion import DataIngestionPipeline; print('Data ingestion ready')"
-python -c "from src.data_validation import DataValidator; print('Data validation ready')"
-python -c "from src.data_preparation import DataPreparationPipeline; print('Data preparation ready')"
-```
-
-### Validate Pipeline:
-```bash
-# Check all components
-python main_pipeline.py
-```
+- **Database**: SQLite (local) / PostgreSQL (production)
+- **Feature Store**: CSV-based (extensible to Redis/PostgreSQL)
 
 ## Troubleshooting
 
-### Common Issues:
+| Issue | Fix |
+|-------|-----|
+| Import Errors | `pip install -r requirements.txt` + set `PYTHONPATH` |
+| Data File Not Found | Verify `data/raw/customer_data.csv` exists |
+| Permission Errors | `chmod -R 755 data/ logs/ reports/` |
+| Memory Issues | Subsample with `head -1000` for testing |
 
-1. **Import Errors:**
-   ```bash
-   pip install -r requirements.txt
-   export PYTHONPATH=$PYTHONPATH:$(pwd)
-   ```
-
-2. **Data File Not Found:**
-   ```bash
-   # Ensure dataset is in data/raw/customer_data.csv
-   ls -la data/raw/
-   ```
-
-3. **Permission Errors:**
-   ```bash
-   # Fix directory permissions
-   chmod -R 755 data/ logs/ reports/
-   ```
-
-4. **Memory Issues:**
-   ```bash
-   # Reduce dataset size for testing
-   head -1000 data/raw/customer_data.csv > data/raw/customer_data_sample.csv
-   ```
-
-### Debug Mode:
-```bash
-# Enable debug logging
-export LOG_LEVEL=DEBUG
-python main_pipeline.py
-```
-
-## Performance Optimization
-
-### For Large Datasets:
-- Use data chunking in processing
-- Implement parallel processing
-- Optimize database queries
-- Use memory-efficient data structures
-
-### For Production:
-- Implement caching mechanisms
-- Add monitoring and alerting
-- Set up automated retraining
-- Implement A/B testing framework
-
-## Contributing
-
-1. Fork the repository
-2. Create feature branch
-3. Add tests for new functionality
-4. Ensure all pipeline steps work
-5. Submit pull request
+Enable debug logging: `export LOG_LEVEL=DEBUG`
 
 ## Documentation
 
-- **Problem Formulation**: `problem_formulation.md`
-- **DVC Data Versioning**: `docs/DVC_Data_Versioning_Guide.md`
-- **Feature Store**: `docs/FEATURE_STORE_README.md`
-- **Transformation**: `docs/TRANSFORMATION_STORAGE.md`
+- `problem_formulation.md` — Business problem definition
+- `docs/DVC_Data_Versioning_Guide.md` — DVC guide
+- `docs/FEATURE_STORE_README.md` — Feature store details
+- `docs/TRANSFORMATION_STORAGE.md` — Transformation details
 
 ## License
 
-This project is for educational purposes. Dataset license follows IBM terms.
-
-## Support
-
-For issues and questions:
-1. Check troubleshooting section
-2. Review logs in `logs/` directory
-3. Check documentation in `docs/`
-4. Create GitHub issue with details
+Educational purposes only. Dataset license follows IBM terms.
 
 ## References
-
-- [Apache Airflow Documentation](https://airflow.apache.org/docs/)
-- [DVC Documentation](https://dvc.org/doc)
-- [scikit-learn Documentation](https://scikit-learn.org/stable/)
-- [Pandas Documentation](https://pandas.pydata.org/docs/)
-- [SQLite Documentation](https://www.sqlite.org/docs.html)
+- [DVC Documentation](https://dvc.org/doc) · [scikit-learn](https://scikit-learn.org/stable/) · [Pandas](https://pandas.pydata.org/docs/) · [SQLite](https://www.sqlite.org/docs.html)
