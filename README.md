@@ -243,11 +243,6 @@ python src/data_transformation_storage.py
 # Feature store
 python src/feature_store.py
 
-# Data versioning (DVC-based)
-dvc status                     # Check data status
-dvc push                       # Push data to S3
-dvc pull                       # Pull data from S3
-
 # Model training
 python src/build_model.py
 ```
@@ -255,41 +250,6 @@ python src/build_model.py
 ### Run Complete Pipeline:
 ```bash
 python main_pipeline.py
-```
-
-### DVC Data Versioning Commands:
-```bash
-# Initialize DVC (already done)
-dvc init
-
-# Check data status
-dvc status
-
-# Run pipeline and track outputs
-dvc repro
-
-# Push data to remote storage (S3)
-dvc push
-
-# Pull data from remote storage
-dvc pull
-
-# Check version history
-git log --oneline --grep="Data version"
-
-# List all version tags
-git tag -l
-
-# Checkout specific data version
-git checkout <version-tag>
-dvc checkout
-
-# Add new data to tracking
-dvc add data/new_dataset.csv
-
-# Configure S3 remote
-dvc remote add -d s3remote s3://your-bucket/dvc-storage
-dvc remote modify s3remote region us-east-1
 ```
 
 ## Monitoring and Logging
@@ -322,135 +282,11 @@ docker run -v $(pwd)/data:/app/data churn-prediction-pipeline
 docker-compose up -d
 ```
 
-### Docker with DVC:
-```bash
-# Run pipeline with DVC versioning
-docker run -v $(pwd)/data:/app/data churn-pipeline
-
-# Interactive container with DVC
-docker run -it -v $(pwd):/app churn-pipeline bash
-
-# Inside container:
-dvc status
-dvc push
-```
-
 ### Docker Services:
 - Application container with all dependencies
 - DVC data versioning automatically configured
 - SQLite database (can be upgraded to PostgreSQL)
 - Volume mounts for data persistence
-
-## DVC Data Versioning
-
-This project uses DVC (Data Version Control) for data versioning and pipeline management.
-
-### DVC Setup
-
-1. **Install DVC with S3 support:**
-```bash
-pip install dvc dvc-s3
-```
-
-2. **Initialize DVC (already done):**
-```bash
-dvc init
-```
-
-3. **Configure environment variables:**
-```bash
-# Copy example environment file
-cp .env.example .env
-
-# Edit .env file with your credentials
-nano .env
-
-# Required variables:
-# AWS_ACCESS_KEY_ID=your_access_key
-# AWS_SECRET_ACCESS_KEY=your_secret_key
-# AWS_REGION=your_region
-# S3_BUCKET_NAME=your_bucket_name
-```
-
-4. **Configure S3 remote storage:**
-```bash
-dvc remote add -d s3remote s3://your-bucket/dvc-storage
-dvc remote modify s3remote region your-region
-# Credentials are automatically read from environment variables
-```
-
-### DVC Pipeline Commands
-
-```bash
-# Run the complete pipeline
-dvc repro
-
-# Check pipeline status
-dvc status
-
-# Push data to S3
-dvc push
-
-# Pull data from S3
-dvc pull
-
-# Show pipeline DAG
-dvc dag
-
-# Show pipeline metrics
-dvc metrics show
-```
-
-### DVC Data Management
-
-```bash
-# Add new data file to DVC tracking
-dvc add data/new_file.csv
-git add data/new_file.csv.dvc .gitignore
-git commit -m "Add new data file"
-
-# Check data status
-dvc status
-
-# Compare data versions
-dvc diff
-
-# List tracked files
-dvc list . --dvc-only
-```
-
-### DVC Version Control
-
-```bash
-# Create data version tag
-git tag -a v1.0 -m "Initial data version"
-
-# Checkout specific version
-git checkout v1.0
-dvc checkout
-
-# List all versions
-git tag -l
-
-# Show version differences
-dvc diff HEAD~1
-```
-
-### DVC Remote Storage
-
-```bash
-# List remotes
-dvc remote list
-
-# Test remote connection
-dvc remote modify s3remote --test
-
-# Push specific stage
-dvc push full_pipeline
-
-# Pull specific stage
-dvc pull full_pipeline
-```
 
 ## Configuration
 
